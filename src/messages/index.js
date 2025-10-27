@@ -1,0 +1,27 @@
+module.exports = {
+  notDefined: 'Not defined',
+  notFound: 'Not found',
+  success: 'success',
+  error: 'error',
+  userNotFound: 'User Not Found',
+  emailNotSent: 'There was an error sending the email! Please try again later.',
+  emailRequired: 'Email is required',
+  newPasswordSame: 'New password cannot be same as old password',
+  incorrectPassword: 'Incorrect Password',
+  userCreated: 'User Created Successfully',
+  userUpdated: 'User Updated Successfully',
+  userDeleted: 'User Deleted Successfully',
+  invalidToken: 'Invalid or expired token',
+  tokenExpired: 'Token has expired',
+  tokenInvalid: 'Invalid token',
+  passwordUpdated: 'Password Updated Successfully',
+  passwordResetSuccess: 'Password updated successfully. Please log in again.',
+  passwordRecentlyChanged: 'Password recently changed! Please log in again.',
+  notAuthenticated: 'You are not authenticated! Please log in first.',
+  unAuthorized: 'You are not authorized to perform this action.',
+  duplicateEntry: 'Duplicate field value entered.',
+  recordNotFound: 'Record not found.',
+  invalidData:
+    'Invalid data provided. Please check your request and try again.',
+  dbError: 'Cannot connect to the database. Please try again later.'
+};
