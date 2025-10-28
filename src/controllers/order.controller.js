@@ -1,9 +1,9 @@
-const prisma = require('../config/prismaClient');
-const messages = require('../messages');
-const AppError = require('../utils/appError');
-const catchAsync = require('../utils/catchAsync');
+import prisma from '../config/prismaClient.js';
+import messages from '../messages/index.js';
+import AppError from '../utils/appError.js';
+import catchAsync from '../utils/catchAsync.js';
 
-exports.createOrder = catchAsync(async (req, res, next) => {
+export const createOrder = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: messages.success
   });

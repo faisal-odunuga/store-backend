@@ -1,5 +1,5 @@
-const { validate: isUuid } = require('uuid');
-const AppError = require('../utils/appError');
+import { validate as isUuid } from 'uuid';
+import AppError from '../utils/appError.js';
 
 const validateId = (req, res, next) => {
   const { id } = req.params;
@@ -14,4 +14,4 @@ const validateId = (req, res, next) => {
   next();
 };
 
-module.exports = validateId;
+export default validateId;

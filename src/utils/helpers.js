@@ -1,4 +1,11 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import {
+  JWT_COOKIE_EXPIRES_IN,
+  JWT_EXPIRES_IN,
+  JWT_SECRET,
+  NODE_ENV
+} from '../secrets.js';
 
 export const SentenseCase = word => {
   const lowerCase = word.toLowerCase();
@@ -34,4 +41,18 @@ export const createPasswordResetToken = user => {
 
   const passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
   return { resetToken, passwordResetToken, passwordResetExpires };
+};
+
+export const sendToken = user => {
+  const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN
+  });
+
+  const cookieOptions = {
+    httpOnly: true,
+    expires: new Date(Date.now() + JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000)
+  };
+  if (NODE_ENV === 'production') cookieOptions.secure = true;
+
+  return { token, cookieOptions };
 };

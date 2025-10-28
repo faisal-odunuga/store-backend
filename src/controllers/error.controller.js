@@ -1,7 +1,8 @@
 // controllers/error.controller.js
-const AppError = require('../utils/appError');
-const messages = require('../messages');
-const { SentenseCase } = require('../utils/helpers');
+
+import AppError from '../utils/appError.js';
+import messages from '../messages/index.js';
+import { SentenseCase } from '../utils/helpers.js';
 
 const handlePrismaErrors = err => {
   // Duplicate value error (unique constraint)
@@ -29,7 +30,7 @@ const handlePrismaErrors = err => {
   return err; // If not a Prisma error, return original
 };
 
-module.exports = (err, req, res, next) => {
+export default (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 

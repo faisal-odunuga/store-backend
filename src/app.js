@@ -1,10 +1,9 @@
-const express = require('express');
-const morgan = require('morgan');
-
-const messages = require('./messages');
-const AppError = require('./utils/appError');
-const globalErrorHandler = require('./controllers/error.controller');
-const apiRoutes = require('./routes'); // 👈 import the global route handler
+import express from 'express';
+import morgan from 'morgan';
+import messages from './messages/index.js';
+import AppError from './utils/appError.js';
+import globalErrorHandler from './controllers/error.controller.js';
+import apiRoutes from './routes/index.js'; // 👈 import the global route handler
 
 const app = express();
 
@@ -34,4 +33,4 @@ app.use((req, res, next) => {
 // ─── GLOBAL ERROR HANDLER ──────────────────────
 app.use(globalErrorHandler);
 
-module.exports = app;
+export default app;

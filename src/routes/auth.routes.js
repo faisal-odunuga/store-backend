@@ -1,13 +1,13 @@
-const express = require('express');
-const authController = require('../controllers/auth.controller.js');
-const {
+import express from 'express';
+import * as authController from '../controllers/auth.controller.js';
+import {
   signupSchema,
   loginSchema,
   updatePasswordSchema,
   resetPassword
-} = require('../validations/auth.schema.js');
-const validateZod = require('../middlewares/validateZod.js');
-const authMiddleWare = require('../middlewares/auth.js');
+} from '../validations/auth.schema.js';
+import validateZod from '../middlewares/validateZod.js';
+import * as authMiddleWare from '../middlewares/auth.js';
 const router = express.Router();
 
 router.route('/signup').post(validateZod(signupSchema), authController.signUp);
@@ -21,6 +21,8 @@ router
     authController.changePassword
   );
 router.route('/forgot-password').patch(authController.forgotPassword);
-router.route('/reset-password/:token').patch(validateZod(resetPassword),authController.resetPassword);
+router
+  .route('/reset-password/:token')
+  .patch(validateZod(resetPassword), authController.resetPassword);
 
-module.exports = router;
+export default router;

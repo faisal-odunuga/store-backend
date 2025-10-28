@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
 const productSchema = z
   .object({
@@ -58,4 +58,4 @@ const productSchema = z
   })
   .strict({ message: 'Unknown field(s) provided' });
 
-module.exports = { productSchema };
+export { productSchema };

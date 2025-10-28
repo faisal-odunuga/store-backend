@@ -1,9 +1,9 @@
-const express = require('express');
-const productController = require('../controllers/product.controller.js');
-const { productSchema } = require('../validations/product.schema.js');
-const validateZod = require('../middlewares/validateZod.js');
-const validateId = require('../middlewares/validateId.js');
-const authMiddleWare = require('../middlewares/auth.js');
+import express from 'express';
+import * as productController from '../controllers/product.controller.js';
+import { productSchema } from '../validations/product.schema.js';
+import validateZod from '../middlewares/validateZod.js';
+import validateId from '../middlewares/validateId.js';
+import * as authMiddleWare from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -39,4 +39,4 @@ router
   .route('/category/:category')
   .get(productController.getProductsByCategory);
 
-module.exports = router;
+export default router;

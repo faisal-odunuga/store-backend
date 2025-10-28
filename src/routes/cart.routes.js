@@ -1,9 +1,9 @@
-const express = require('express');
-const cartController = require('../../src/controllers/cart.controller');
-const validateId = require('../../src/middlewares/validateId');
-const authMiddleWare = require('../../src/middlewares/auth');
-const validateZod = require('../middlewares/validateZod');
-const { addToCart } = require('../validations/cart.schema');
+import express from 'express';
+import * as cartController from '../controllers/cart.controller.js';
+import validateId from '../middlewares/validateId.js';
+import * as authMiddleWare from '../middlewares/auth.js';
+import validateZod from '../middlewares/validateZod.js';
+import { addToCart } from '../validations/cart.schema.js';
 const router = express.Router();
 
 router
@@ -21,4 +21,4 @@ router
   .patch(authMiddleWare.protect, validateId, cartController.updateQuantity)
   .delete(authMiddleWare.protect, validateId, cartController.deleteCartItem);
 
-module.exports = router;
+export default router;

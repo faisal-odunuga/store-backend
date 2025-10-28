@@ -1,10 +1,11 @@
 // Load environment variables first
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const bodyParser = require('body-parser');
-const app = require('./app');
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+import bodyParser from 'body-parser';
+import app from './app.js';
+import { PORT, NODE_ENV } from './secrets.js';
+
 const prisma = new PrismaClient();
-const { PORT, NODE_ENV } = require('./secrets');
 
 app.use(bodyParser.json());
 

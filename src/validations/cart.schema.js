@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
 const addToCart = z.object({
   product: z.string().uuid(),
@@ -18,4 +18,4 @@ const updateQuantity = z.object({
     .default(1)
 });
 
-module.exports = { addToCart };
+export { addToCart };

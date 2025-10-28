@@ -1,9 +1,11 @@
-const prisma = require('../config/prismaClient');
-const messages = require('../messages');
-const AppError = require('../utils/appError');
-const { cleanUser } = require('../utils/helpers');
-const { compareSycnc } = require('bcrypt');
-exports.updateMe = catchAsync(async (req, res, next) => {
+import catchAsync from '../utils/catchAsync.js';
+import messages from '../messages/index.js';
+import AppError from '../utils/appError.js';
+import prisma from '../config/prismaClient.js';
+import { cleanUser } from '../utils/helpers.js';
+import compareSycnc from 'bcrypt';
+
+export const updateMe = catchAsync(async (req, res, next) => {
   if (req.body.password)
     return next(new AppError('This route is not for password updates', 400));
 
@@ -22,7 +24,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.deleteMe = catchAsync(async (req, res, next) => {
+export const deleteMe = catchAsync(async (req, res, next) => {
   if (!req.body.password)
     return next(new AppError('Please provide your password', 400));
 

@@ -12,6 +12,7 @@
     "debug": "ndb ./src/server.js",
     "seed": "npx prisma db seed"
   },
+  "type": "module",
   "author": "",
   "license": "ISC",
   "description": "",

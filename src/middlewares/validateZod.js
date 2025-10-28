@@ -1,4 +1,4 @@
-const AppError = require('../utils/appError');
+import AppError from '../utils/appError.js';
 
 const validateZod = schema => {
   return (req, res, next) => {
@@ -29,4 +29,4 @@ const validateZod = schema => {
   };
 };
 
-module.exports = validateZod;
+export default validateZod;

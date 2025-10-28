@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   notDefined: 'Not defined',
   notFound: 'Not found',
   success: 'success',

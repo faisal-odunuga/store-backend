@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
 // 🧍‍♂️ Signup Schema
 const signupSchema = z
@@ -124,7 +124,7 @@ const resetPassword = z
   })
   .strict({ message: 'Unknown field(s) provided' });
 
-module.exports = {
+export {
   signupSchema,
   loginSchema,
   updateUserSchema,

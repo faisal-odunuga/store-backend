@@ -1,10 +1,10 @@
-const catchAsync = require('../utils/catchAsync');
-const messages = require('../messages');
-const AppError = require('../utils/appError');
-const prisma = require('../config/prismaClient');
-const { cleanProduct } = require('../utils/helpers');
+import catchAsync from '../utils/catchAsync.js';
+import messages from '../messages/index.js';
+import AppError from '../utils/appError.js';
+import prisma from '../config/prismaClient.js';
+import { cleanProduct } from '../utils/helpers.js';
 
-exports.addToCart = catchAsync(async (req, res, next) => {
+export const addToCart = catchAsync(async (req, res, next) => {
   const user = req.user;
   const { product: productId, quantity } = req.body;
 
@@ -33,7 +33,7 @@ exports.addToCart = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getCartItems = catchAsync(async (req, res, next) => {
+export const getCartItems = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
 
   const cartItems = await prisma.cartItem.findMany({
@@ -52,7 +52,7 @@ exports.getCartItems = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.updateQuantity = catchAsync(async (req, res, next) => {
+export const updateQuantity = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   const { id: cartItemId } = req.params;
   const { quantity } = req.body;
@@ -83,7 +83,7 @@ exports.updateQuantity = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.deleteCartItem = catchAsync(async (req, res, next) => {
+export const deleteCartItem = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   const { id: cartItemId } = req.params;
 
@@ -102,7 +102,7 @@ exports.deleteCartItem = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.clearCart = catchAsync(async (req, res, next) => {
+export const clearCart = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   await prisma.cartItem.deleteMany({ where: { userId } });
 

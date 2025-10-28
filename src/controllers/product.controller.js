@@ -1,12 +1,12 @@
-const prisma = require('../config/prismaClient');
-const messages = require('../messages');
-const AppError = require('../utils/appError');
-const catchAsync = require('../utils/catchAsync');
+import prisma from '../config/prismaClient.js';
+import messages from '../messages/index.js';
+import AppError from '../utils/appError.js';
+import catchAsync from '../utils/catchAsync.js';
 
 /* ======================================================
    ✅ GET ALL PRODUCTS (with pagination, search & sorting)
 ====================================================== */
-exports.getAllProducts = catchAsync(async (req, res, next) => {
+export const getAllProducts = catchAsync(async (req, res, next) => {
   const { category, search, sort } = req.query;
 
   // Pagination setup
@@ -57,7 +57,7 @@ exports.getAllProducts = catchAsync(async (req, res, next) => {
 /* ======================================================
    ✅ GET SINGLE PRODUCT
 ====================================================== */
-exports.getProduct = catchAsync(async (req, res, next) => {
+export const getProduct = catchAsync(async (req, res, next) => {
   const product = await prisma.product.findUniqueOrThrow({
     where: { id: req.params.id },
     cacheStrategy: { ttl: 60 }
@@ -74,7 +74,7 @@ exports.getProduct = catchAsync(async (req, res, next) => {
 /* ======================================================
    ✅ CREATE PRODUCT (Zod validated)
 ====================================================== */
-exports.createProduct = catchAsync(async (req, res, next) => {
+export const createProduct = catchAsync(async (req, res, next) => {
   const product = await prisma.product.create({
     data: req.validatedData
   });
@@ -88,7 +88,7 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 /* ======================================================
    ✅ UPDATE PRODUCT
 ====================================================== */
-exports.updateProduct = catchAsync(async (req, res, next) => {
+export const updateProduct = catchAsync(async (req, res, next) => {
   const product = await prisma.product.update({
     where: { id: req.params.id },
     data: req.validatedData
@@ -103,7 +103,7 @@ exports.updateProduct = catchAsync(async (req, res, next) => {
 /* ======================================================
    ✅ DELETE PRODUCT
 ====================================================== */
-exports.deleteProduct = catchAsync(async (req, res, next) => {
+export const deleteProduct = catchAsync(async (req, res, next) => {
   await prisma.product.delete({
     where: { id: req.params.id }
   });
@@ -117,7 +117,7 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
 /* ======================================================
    ✅ GET PRODUCTS BY CATEGORY
 ====================================================== */
-exports.getProductsByCategory = catchAsync(async (req, res, next) => {
+export const getProductsByCategory = catchAsync(async (req, res, next) => {
   const category = req.params.category;
 
   const products = await prisma.product.findMany({
@@ -144,7 +144,7 @@ exports.getProductsByCategory = catchAsync(async (req, res, next) => {
 /* ======================================================
    ✅ GET RELATED PRODUCTS
 ====================================================== */
-exports.getRelatedProducts = catchAsync(async (req, res, next) => {
+export const getRelatedProducts = catchAsync(async (req, res, next) => {
   const product = await prisma.product.findUnique({
     where: { id: req.params.id }
   });

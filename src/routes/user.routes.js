@@ -1,8 +1,9 @@
-const express = require('express');
-const userController = require('../controllers/user.controller');
-const authMiddleWare = require('../middlewares/auth');
-const validateZod = require('../middlewares/validateZod');
-const { updateUserSchema } = require('../validations/auth.schema');
+import express from 'express';
+import * as userController from '../controllers/user.controller.js';
+import { updateUserSchema } from '../validations/auth.schema.js';
+import validateZod from '../middlewares/validateZod.js';
+import * as authMiddleWare from '../middlewares/auth.js';
+
 const router = express.Router();
 
 router
@@ -16,4 +17,4 @@ router
   .route('/delete-me')
   .patch(authMiddleWare.protect, userController.deleteMe);
 
-module.exports = router;
+export default router;

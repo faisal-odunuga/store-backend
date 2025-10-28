@@ -1,15 +1,20 @@
-const messages = require('../messages');
-const catchAsync = require('../utils/catchAsync');
-const AppError = require('../utils/appError');
-const { hashSync, compareSync } = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { JWT_SECRET, JWT_EXPIRES_IN } = require('../secrets');
-const { cleanUser, createPasswordResetToken } = require('../utils/helpers');
-const prisma = require('../config/prismaClient');
-const sendEmail = require('../utils/email');
-const crypto = require('crypto');
+import messages from '../messages/index.js';
+import catchAsync from '../utils/catchAsync.js';
+import AppError from '../utils/appError.js';
+import { hashSync, compareSync } from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import {
+  JWT_SECRET,
+  JWT_EXPIRES_IN,
+  JWT_COOKIE_EXPIRES_IN,
+  NODE_ENV
+} from '../secrets.js';
+import { cleanUser, createPasswordResetToken } from '../utils/helpers.js';
+import prisma from '../config/prismaClient.js';
+import sendEmail from '../utils/email.js';
+import crypto from 'crypto';
 
-exports.signUp = catchAsync(async (req, res, next) => {
+export const signUp = catchAsync(async (req, res, next) => {
   const data = req.validatedData;
   const { email, name, password } = data;
   let user = await prisma.user.findUnique({
@@ -33,7 +38,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.login = catchAsync(async (req, res, next) => {
+export const login = catchAsync(async (req, res, next) => {
   const data = req.validatedData;
   const { email, password } = data;
   let user = await prisma.user.findUnique({
@@ -49,6 +54,17 @@ exports.login = catchAsync(async (req, res, next) => {
   const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN
   });
+
+  const cookieOptions = {
+    expires: new Date(Date.now() + JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
+    secure: true,
+    httpOnly: true
+  };
+
+  if (NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.cookie('jwt', token, cookieOptions);
+
   res.status(201).json({
     status: messages.success,
     data: {
@@ -58,14 +74,14 @@ exports.login = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getLoggedInUser = catchAsync(async (req, res, next) => {
+export const getLoggedInUser = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: messages.success,
     data: req.user
   });
 });
 
-exports.changePassword = catchAsync(async (req, res, next) => {
+export const changePassword = catchAsync(async (req, res, next) => {
   const { oldPassword, newPassword } = req.validatedData;
   const { id: userId } = req.user;
 
@@ -103,7 +119,7 @@ exports.changePassword = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.forgotPassword = catchAsync(async (req, res, next) => {
+export const forgotPassword = catchAsync(async (req, res, next) => {
   if (!req.body.email) return next(new AppError(messages.emailRequired, 400));
 
   const user = await prisma.user.findUnique({
@@ -111,8 +127,6 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   });
 
   if (!user) return next(new AppError(messages.userNotFound, 400));
-
-
 
   const {
     resetToken,
@@ -161,7 +175,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
-exports.resetPassword = catchAsync(async (req, res, next) => {
+export const resetPassword = catchAsync(async (req, res, next) => {
   const hashedToken = crypto
     .createHash('sha256')
     .update(req.params.token)

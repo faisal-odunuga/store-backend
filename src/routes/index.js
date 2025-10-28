@@ -1,10 +1,9 @@
-const express = require('express');
-const productRouter = require('./product.routes');
-const authRouter = require('./auth.routes');
-const cartRouter = require('./cart.routes');
-const orderRouter = require('./order.routes');
-const userRouter = require('./user.routes');
-
+import express from 'express';
+import productRouter from './product.routes.js';
+import authRouter from './auth.routes.js';
+import cartRouter from './cart.routes.js';
+import orderRouter from './order.routes.js';
+import userRouter from './user.routes.js';
 
 const router = express.Router();
 
@@ -15,4 +14,4 @@ router.use('/cart', cartRouter);
 router.use('/orders', orderRouter);
 router.use('/users', userRouter);
 
-module.exports = router;
+export default router;
