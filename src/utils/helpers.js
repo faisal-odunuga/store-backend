@@ -43,15 +43,17 @@ export const createPasswordResetToken = user => {
   return { resetToken, passwordResetToken, passwordResetExpires };
 };
 
-export const sendToken = user => {
+export const createToken = user => {
   const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN
   });
 
   const cookieOptions = {
     httpOnly: true,
-    expires: new Date(Date.now() + JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000)
+    expires: new Date(Date.now() + JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
+    secure: true
   };
+
   if (NODE_ENV === 'production') cookieOptions.secure = true;
 
   return { token, cookieOptions };

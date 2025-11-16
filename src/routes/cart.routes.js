@@ -6,19 +6,17 @@ import validateZod from '../middlewares/validateZod.js';
 import { addToCart } from '../validations/cart.schema.js';
 const router = express.Router();
 
+router.use(authMiddleWare.protect);
 router
   .route('/')
-  .post(
-    authMiddleWare.protect,
-    validateZod(addToCart),
-    cartController.addToCart
-  )
-  .get(authMiddleWare.protect, cartController.getCartItems)
-  .delete(authMiddleWare.protect, cartController.clearCart);
+  .post(validateZod(addToCart), cartController.addToCart)
+  .get(cartController.getCartItems)
+  .delete(cartController.clearCart);
 
+router.use(validateId);
 router
   .route('/:id')
-  .patch(authMiddleWare.protect, validateId, cartController.updateQuantity)
-  .delete(authMiddleWare.protect, validateId, cartController.deleteCartItem);
+  .patch(cartController.updateQuantity)
+  .delete(cartController.deleteCartItem);
 
 export default router;

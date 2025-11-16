@@ -7,30 +7,8 @@ import * as authMiddleWare from '../middlewares/auth.js';
 
 const router = express.Router();
 
-router
-  .route('/')
-  .get(productController.getAllProducts)
-  .post(
-    validateZod(productSchema),
-    [authMiddleWare.protect, authMiddleWare.restrictTo('ADMIN')],
-    productController.createProduct
-  );
-
-router
-  .route('/:id')
-  .get(validateId, productController.getProduct)
-  .patch(
-    validateId,
-    validateZod(productSchema.partial()),
-    [authMiddleWare.protect, authMiddleWare.restrictTo('ADMIN')],
-    productController.updateProduct
-  )
-  .delete(
-    validateId,
-    [authMiddleWare.protect, authMiddleWare.restrictTo('ADMIN')],
-    productController.deleteProduct
-  );
-
+router.route('/').get(productController.getAllProducts);
+router.route('/:id').get(validateId, productController.getProduct);
 router
   .route('/:id/related')
   .get(validateId, productController.getRelatedProducts);
@@ -38,5 +16,18 @@ router
 router
   .route('/category/:category')
   .get(productController.getProductsByCategory);
+
+// ADMIN PRIVILEDGES
+router.use(authMiddleWare.protect, authMiddleWare.restrictTo('ADMIN'));
+
+router
+  .route('/')
+  .post(validateZod(productSchema), productController.createProduct);
+
+router.use(validateId);
+router
+  .route('/:id')
+  .patch(validateZod(productSchema.partial()), productController.updateProduct)
+  .delete(productController.deleteProduct);
 
 export default router;

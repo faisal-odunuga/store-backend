@@ -6,15 +6,11 @@ import * as authMiddleWare from '../middlewares/auth.js';
 
 const router = express.Router();
 
+router.use(authMiddleWare.protect);
 router
   .route('/update-me')
-  .patch(
-    authMiddleWare.protect,
-    validateZod(updateUserSchema.partial()),
-    userController.updateMe
-  );
-router
-  .route('/delete-me')
-  .patch(authMiddleWare.protect, userController.deleteMe);
+  .patch(validateZod(updateUserSchema.partial()), userController.updateMe);
+
+router.route('/delete-me').delete(userController.deleteMe);
 
 export default router;

@@ -3,6 +3,7 @@ export default {
   notFound: 'Not found',
   success: 'success',
   error: 'error',
+  loggedIn: 'User logged In Successfully',
   userNotFound: 'User Not Found',
   emailNotSent: 'There was an error sending the email! Please try again later.',
   emailRequired: 'Email is required',
