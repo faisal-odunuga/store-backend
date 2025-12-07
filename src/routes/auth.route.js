@@ -24,4 +24,6 @@ router
   .route('/change-password')
   .patch(validateZod(updatePasswordSchema), authController.changePassword);
 
+router.post('/logout', authController.logout);
+
 export default router;
