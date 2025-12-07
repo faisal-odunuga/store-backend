@@ -28,9 +28,9 @@ router
     productController.createProduct
   );
 
-router.use(validateId);
 router
   .route('/:id')
+  .all(validateId)
   .patch(validateZod(productSchema.partial()), productController.updateProduct)
   .delete(productController.deleteProduct);
 

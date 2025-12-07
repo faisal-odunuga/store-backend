@@ -1,6 +1,6 @@
 import express from 'express';
 import * as userController from '../controllers/user.controller.js';
-import { updateUserSchema } from '../validators/auth.schema.js';
+import { updateProfileSchema } from '../validators/user.schema.js';
 import validateZod from '../middlewares/validateZod.js';
 import * as authMiddleware from '../middlewares/auth.js';
 
@@ -8,9 +8,9 @@ const router = express.Router();
 
 router.use(authMiddleware.protect);
 router.route('/get-me').get(userController.getMe);
-// router
-//   .route('/update-me')
-//   .patch(validateZod(updateUserSchema.partial()), userController.updateMe);
+router
+  .route('/update-me')
+  .patch(validateZod(updateProfileSchema), userController.updateMe);
 
 // router.route('/delete-me').delete(userController.deleteMe);
 router

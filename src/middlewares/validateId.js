@@ -3,6 +3,7 @@ import AppError from '../utils/appError.js';
 
 const validateId = (req, res, next) => {
   const { id } = req.params;
+  console.log(id, req.params);
 
   if (!id) {
     const error = new AppError('No id passed', 400);

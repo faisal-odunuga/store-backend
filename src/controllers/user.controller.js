@@ -8,7 +8,11 @@ export const getMe = catchAsync(async (req, res, next) => {
 });
 
 export const getAllUsers = catchAsync(async (req, res, next) => {
-    const users = await userService.getAllUsers();
-    apiResponse(res, 200, 'All users retrieved', { users });
+  const users = await userService.getAllUsers();
+  apiResponse(res, 200, 'All users retrieved', { users });
 });
 
+export const updateMe = catchAsync(async (req, res, next) => {
+  const user = await userService.updateUserProfile(req.user.id, req.body);
+  apiResponse(res, 200, 'Profile updated successfully', { user });
+});

@@ -54,6 +54,8 @@ export const resetPassword = catchAsync(async (req, res, next) => {
 });
 
 export const changePassword = catchAsync(async (req, res, next) => {
+  console.log(req.user.id, req.body.oldPassword, req.body.newPassword);
+
   const { user } = await authService.changePassword(
     req.user.id,
     req.body.oldPassword,
