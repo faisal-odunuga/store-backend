@@ -38,6 +38,7 @@ export default (err, req, res, next) => {
   if (err.code && err.code.startsWith('P')) err = handlePrismaErrors(err);
 
   if (process.env.NODE_ENV === 'development') {
+    console.error('💥 ERROR 💥', err);
     // Verbose output for debugging
     return res.status(err.statusCode).json({
       status: err.status,

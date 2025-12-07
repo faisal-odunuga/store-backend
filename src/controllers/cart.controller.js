@@ -1,114 +1,49 @@
+import * as cartService from '../services/cart.service.js';
 import catchAsync from '../utils/catchAsync.js';
-import messages from '../messages/index.js';
-import AppError from '../utils/appError.js';
-import prisma from '../config/prismaClient.js';
-import { cleanProduct } from '../utils/helpers.js';
+import apiResponse from '../utils/apiResponse.js';
 
 export const addToCart = catchAsync(async (req, res, next) => {
-  const user = req.user;
-  const { product: productId, quantity } = req.body;
+  const { productId, quantity } = req.body;
+  console.log(req.body);
 
-  const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product) return next(new AppError('Product not found', 404));
-
-  const existingItem = await prisma.cartItem.findUnique({
-    where: { userId_productId: { userId: user.id, productId } }
-  });
-
-  if (existingItem) return next(new AppError('Product already in cart', 400));
-
-  const newItem = await prisma.cartItem.create({
-    data: { userId: user.id, productId, quantity },
-    select: {
-      id: true,
-      quantity: true,
-      product: { select: { id: true, name: true, imageUrl: true, price: true } }
-    }
-  });
-
-  res.status(201).json({
-    status: messages.success,
-    message: 'Product added to cart successfully',
-    data: cleanProduct(newItem)
-  });
+  const cartItem = await cartService.addToCart(
+    req.user.id,
+    productId,
+    quantity
+  );
+  apiResponse(res, 200, 'Item added to cart', { cartItem });
 });
 
 export const getCartItems = catchAsync(async (req, res, next) => {
-  const userId = req.user.id;
-
-  const cartItems = await prisma.cartItem.findMany({
-    where: { userId },
-    select: {
-      id: true,
-      quantity: true,
-      product: { select: { id: true, name: true, imageUrl: true, price: true } }
-    }
-  });
-
-  res.status(200).json({
-    status: messages.success,
-    results: cartItems.length,
-    data: cartItems
-  });
+  const cart = await cartService.getCart(req.user.id);
+  apiResponse(res, 200, 'Cart retrieved successfully', { cart });
 });
 
-export const updateQuantity = catchAsync(async (req, res, next) => {
-  const userId = req.user.id;
-  const { id: cartItemId } = req.params;
+export const updateCartItem = catchAsync(async (req, res, next) => {
+  const { id: productId } = req.params;
   const { quantity } = req.body;
 
-  if (!quantity || quantity < 1)
-    return next(new AppError('Quantity must be at least 1', 400));
+  console.log(productId, 'productId');
+  console.log(req.user.id, 'userId');
+  console.log(quantity, 'quantity');
 
-  const existing = await prisma.cartItem.findUnique({
-    where: { id: cartItemId, userId }
-  });
+  const cartItem = await cartService.updateCartItem(
+    req.user.id,
+    productId,
+    quantity
+  );
+  console.log(cartItem, 'cart');
 
-  if (!existing) return next(new AppError('Cart item not found', 404));
-
-  const updated = await prisma.cartItem.update({
-    where: { id: cartItemId },
-    data: { quantity },
-    select: {
-      id: true,
-      quantity: true,
-      product: { select: { id: true, name: true, imageUrl: true, price: true } }
-    }
-  });
-
-  res.status(200).json({
-    status: messages.success,
-    message: 'Cart item updated successfully',
-    data: updated
-  });
+  apiResponse(res, 200, 'Cart item updated', { cartItem });
 });
 
-export const deleteCartItem = catchAsync(async (req, res, next) => {
-  const userId = req.user.id;
-  const { id: cartItemId } = req.params;
-
-  const existing = await prisma.cartItem.findUnique({
-    where: { id: cartItemId, userId }
-  });
-
-  if (!existing) return next(new AppError('Cart item not found', 404));
-
-  await prisma.cartItem.delete({ where: { id: cartItemId } });
-
-  res.status(204).json({
-    status: messages.success,
-    message: 'Item removed from cart successfully',
-    data: null
-  });
+export const removeFromCart = catchAsync(async (req, res, next) => {
+  const { id: productId } = req.params;
+  await cartService.removeFromCart(req.user.id, productId);
+  apiResponse(res, 200, 'Item removed from cart');
 });
 
 export const clearCart = catchAsync(async (req, res, next) => {
-  const userId = req.user.id;
-  await prisma.cartItem.deleteMany({ where: { userId } });
-
-  res.status(204).json({
-    status: messages.success,
-    message: 'Cart cleared successfully',
-    data: null
-  });
+  await cartService.clearCart(req.user.id);
+  apiResponse(res, 200, 'Cart cleared');
 });

@@ -5,7 +5,7 @@ import {
   loginSchema,
   updatePasswordSchema,
   resetPassword
-} from '../validations/auth.schema.js';
+} from '../validators/auth.schema.js';
 import validateZod from '../middlewares/validateZod.js';
 import * as authMiddleWare from '../middlewares/auth.js';
 const router = express.Router();

@@ -37,9 +37,7 @@ const signupSchema = z
       .optional()
       .or(z.literal('').optional()),
 
-    address: z.string().optional(),
-
-    role: z.enum(['ADMIN', 'CUSTOMER']).default('CUSTOMER')
+    address: z.string().optional()
   })
   .strict({ message: 'Unknown field(s) provided' });
 

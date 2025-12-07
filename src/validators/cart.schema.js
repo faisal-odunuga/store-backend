@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const addToCart = z.object({
-  product: z.string().uuid(),
+  productId: z.string().uuid(),
   quantity: z
     .number()
     .int()
@@ -10,7 +10,6 @@ const addToCart = z.object({
 });
 
 const updateQuantity = z.object({
-  product: z.string().uuid(),
   quantity: z
     .number()
     .int()
@@ -18,4 +17,4 @@ const updateQuantity = z.object({
     .default(1)
 });
 
-export { addToCart };
+export { addToCart, updateQuantity };
