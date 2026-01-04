@@ -6,12 +6,12 @@ import hpp from 'hpp';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
-import messages from './messages/index.js';
-import AppError from './utils/appError.js';
-import globalErrorHandler from './controllers/error.controller.js';
-import * as paymentController from './controllers/payment.controller.js';
+import messages from './src/messages/index.js';
+import AppError from './src/utils/appError.js';
+import globalErrorHandler from './src/controllers/error.controller.js';
+import * as paymentController from './src/controllers/payment.controller.js';
 
-import apiRoutes from './routes/index.js'; // 👈 import the global route handler
+import apiRoutes from './src/routes/index.js'; // 👈 import the global route handler
 
 const app = express();
 

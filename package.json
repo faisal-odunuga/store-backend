@@ -7,9 +7,9 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon ./src/server.js",
-    "start:prod": "NODE_ENV=production nodemon ./src/server.js",
-    "debug": "ndb ./src/server.js",
+    "start": "nodemon server.js",
+    "start:prod": "NODE_ENV=production nodemon server.js",
+    "debug": "ndb server.js",
     "seed": "npx prisma db seed"
   },
   "type": "module",

@@ -3,7 +3,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import bodyParser from 'body-parser';
 import app from './app.js';
-import { PORT, NODE_ENV } from './secrets.js';
+import { PORT, NODE_ENV } from './src/secrets.js';
 
 const prisma = new PrismaClient();
 
