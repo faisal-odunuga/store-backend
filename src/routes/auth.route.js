@@ -8,6 +8,7 @@ import {
 } from '../validators/auth.schema.js';
 import validateZod from '../middlewares/validateZod.js';
 import * as authMiddleWare from '../middlewares/auth.js';
+
 const router = express.Router();
 
 router.route('/signup').post(validateZod(signupSchema), authController.signUp);
@@ -17,13 +18,17 @@ router
   .route('/reset-password/:token')
   .patch(validateZod(resetPassword), authController.resetPassword);
 
-router.use(authMiddleWare.protect);
+// router.use(authMiddleWare.protect);
 
-router.route('/me').get(authController.getLoggedInUser);
-router
-  .route('/change-password')
-  .patch(validateZod(updatePasswordSchema), authController.changePassword);
+router.get('/me', authMiddleWare.protect, authController.getLoggedInUser);
 
-router.post('/logout', authController.logout);
+router.patch(
+  '/change-password',
+  authMiddleWare.protect,
+  validateZod(updatePasswordSchema),
+  authController.changePassword
+);
+
+router.post('/logout', authMiddleWare.protect, authController.logout);
 
 export default router;

@@ -6,21 +6,24 @@ import { updateOrderStatusSchema } from '../validators/order.schema.js';
 
 const router = express.Router();
 
-router.use(authMiddleware.protect);
-
 router
   .route('/')
-  .post(orderController.createOrder)
-  .get(orderController.getMyOrders);
+  .post(authMiddleware.protect, orderController.createOrder)
+  .get(authMiddleware.protect, orderController.getMyOrders);
 
 router
   .route('/all-orders')
-  .get(authMiddleware.restrictTo('ADMIN'), orderController.getAllOrders);
+  .get(
+    authMiddleware.protect,
+    authMiddleware.restrictTo('ADMIN'),
+    orderController.getAllOrders
+  );
 
 router
   .route('/:id')
-  .get(orderController.getOrder)
+  .get(authMiddleware.protect, orderController.getOrder)
   .patch(
+    authMiddleware.protect,
     authMiddleware.restrictTo('ADMIN'),
     validateZod(updateOrderStatusSchema.partial()),
     orderController.updateOrderStatus

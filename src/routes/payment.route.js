@@ -7,13 +7,12 @@ const router = express.Router();
 import validateZod from '../middlewares/validateZod.js';
 import { initializePaymentSchema } from '../validators/payment.schema.js';
 
-router.use(authMiddleware.protect);
-
 router.post(
   '/initialize',
+  authMiddleware.protect,
   validateZod(initializePaymentSchema),
   paymentController.initializePayment
 );
-router.get('/verify', paymentController.verifyPayment);
+router.get('/verify', authMiddleware.protect, paymentController.verifyPayment);
 
 export default router;

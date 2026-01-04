@@ -50,10 +50,18 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // ─── ROUTES ────────────────────────────────────
-app.get('/api/v1', (req, res) => {
+
+app.get('/', (req, res) => {
   res.status(200).json({
     status: messages.success,
     message: '✅ Server is running successfully'
+  });
+});
+
+app.get('/api/v1', (req, res) => {
+  res.status(200).json({
+    status: messages.success,
+    message: 'Welcome to the Store API'
   });
 });
 

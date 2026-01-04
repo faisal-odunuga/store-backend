@@ -6,15 +6,22 @@ import * as authMiddleware from '../middlewares/auth.js';
 
 const router = express.Router();
 
-router.use(authMiddleware.protect);
-router.route('/get-me').get(userController.getMe);
+router.route('/get-me').get(authMiddleware.protect, userController.getMe);
 router
   .route('/update-me')
-  .patch(validateZod(updateProfileSchema), userController.updateMe);
+  .patch(
+    authMiddleware.protect,
+    validateZod(updateProfileSchema),
+    userController.updateMe
+  );
 
 // router.route('/delete-me').delete(userController.deleteMe);
 router
   .route('/all-users')
-  .get(authMiddleware.restrictTo('ADMIN'), userController.getAllUsers);
+  .get(
+    authMiddleware.protect,
+    authMiddleware.restrictTo('ADMIN'),
+    userController.getAllUsers
+  );
 
 export default router;

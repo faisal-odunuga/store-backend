@@ -30,12 +30,20 @@ const handlePrismaErrors = err => {
   return err; // If not a Prisma error, return original
 };
 
+const handleJWTError = () =>
+  new AppError('Invalid token. Please log in again!', 401);
+
+const handleJWTExpiredError = () =>
+  new AppError('Your token has expired! Please log in again.', 401);
+
 export default (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
   // Handle Prisma errors gracefully
   if (err.code && err.code.startsWith('P')) err = handlePrismaErrors(err);
+  if (err.name === 'JsonWebTokenError') err = handleJWTError();
+  if (err.name === 'TokenExpiredError') err = handleJWTExpiredError();
 
   if (process.env.NODE_ENV === 'development') {
     console.error('💥 ERROR 💥', err);

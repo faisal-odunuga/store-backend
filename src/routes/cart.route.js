@@ -7,17 +7,24 @@ import { addToCart, updateQuantity } from '../validators/cart.schema.js';
 
 const router = express.Router();
 
-router.use(authMiddleWare.protect);
 router
   .route('/')
-  .post(validateZod(addToCart), cartController.addToCart)
-  .get(cartController.getCartItems)
-  .delete(cartController.clearCart);
+  .post(
+    authMiddleWare.protect,
+    validateZod(addToCart),
+    cartController.addToCart
+  )
+  .get(authMiddleWare.protect, cartController.getCartItems)
+  .delete(authMiddleWare.protect, cartController.clearCart);
 
 router
   .route('/:id')
   .all(validateId)
-  .patch(validateZod(updateQuantity), cartController.updateCartItem)
-  .delete(cartController.removeFromCart);
+  .patch(
+    authMiddleWare.protect,
+    validateZod(updateQuantity),
+    cartController.updateCartItem
+  )
+  .delete(authMiddleWare.protect, cartController.removeFromCart);
 
 export default router;

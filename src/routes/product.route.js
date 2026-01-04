@@ -18,11 +18,11 @@ router.route('/:id').get(validateId, productController.getProduct);
 router.route('/category/:category').get(productController.getAllProducts);
 
 // ADMIN PRIVILEGES
-router.use(authMiddleWare.protect, authMiddleWare.restrictTo('ADMIN'));
-
 router
   .route('/')
   .post(
+    authMiddleWare.protect,
+    authMiddleWare.restrictTo('ADMIN'),
     upload.single('image'),
     validateZod(productSchema),
     productController.createProduct
@@ -31,7 +31,16 @@ router
 router
   .route('/:id')
   .all(validateId)
-  .patch(validateZod(productSchema.partial()), productController.updateProduct)
-  .delete(productController.deleteProduct);
+  .patch(
+    authMiddleWare.protect,
+    authMiddleWare.restrictTo('ADMIN'),
+    validateZod(productSchema.partial()),
+    productController.updateProduct
+  )
+  .delete(
+    authMiddleWare.protect,
+    authMiddleWare.restrictTo('ADMIN'),
+    productController.deleteProduct
+  );
 
 export default router;
