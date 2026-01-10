@@ -54,6 +54,27 @@ export const login = async (email, password) => {
   return { user, token };
 };
 
+export const adminLogin = async (email, password) => {
+  if (!email || !password) {
+    throw new AppError('Please provide email and password', 400);
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (
+    !user ||
+    !(await bcrypt.compare(password, user.password)) ||
+    user.role !== 'ADMIN'
+  ) {
+    throw new AppError('Incorrect email or password', 401);
+  }
+
+  const token = signToken(user.id);
+  user.password = undefined;
+
+  return { user, token };
+};
+
 export const forgotPassword = async email => {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {

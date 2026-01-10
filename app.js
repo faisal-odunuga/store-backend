@@ -12,6 +12,7 @@ import globalErrorHandler from './src/controllers/error.controller.js';
 import * as paymentController from './src/controllers/payment.controller.js';
 
 import apiRoutes from './src/routes/index.js'; // 👈 import the global route handler
+import { FRONTEND_URL } from './src/secrets.js';
 
 const app = express();
 
@@ -22,7 +23,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ['https://store-frontend-test.vercel.app'],
+    origin: [FRONTEND_URL ],
     credentials: true
   })
 );

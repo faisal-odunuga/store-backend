@@ -15,32 +15,10 @@ const router = express.Router();
 router.route('/').get(productController.getAllProducts);
 router.route('/:id').get(validateId, productController.getProduct);
 
-router.route('/category/:category').get(productController.getAllProducts);
-
-// ADMIN PRIVILEGES
 router
-  .route('/')
-  .post(
-    authMiddleWare.protect,
-    authMiddleWare.restrictTo('ADMIN'),
-    upload.single('image'),
-    validateZod(productSchema),
-    productController.createProduct
-  );
+  .route('/category/:category')
+  .get(productController.getProductsByCategory);
 
-router
-  .route('/:id')
-  .all(validateId)
-  .patch(
-    authMiddleWare.protect,
-    authMiddleWare.restrictTo('ADMIN'),
-    validateZod(productSchema.partial()),
-    productController.updateProduct
-  )
-  .delete(
-    authMiddleWare.protect,
-    authMiddleWare.restrictTo('ADMIN'),
-    productController.deleteProduct
-  );
+// ADMIN PRIVILEGES MOVED TO /admin/products
 
 export default router;

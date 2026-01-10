@@ -18,8 +18,6 @@ router
   .route('/reset-password/:token')
   .patch(validateZod(resetPassword), authController.resetPassword);
 
-// router.use(authMiddleWare.protect);
-
 router.get('/me', authMiddleWare.protect, authController.getLoggedInUser);
 
 router.patch(

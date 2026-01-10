@@ -16,19 +16,6 @@ router
   );
 
 // router.route('/delete-me').delete(userController.deleteMe);
-router
-  .route('/all-users')
-  .get(
-    authMiddleware.protect,
-    authMiddleware.restrictTo('ADMIN'),
-    userController.getAllUsers
-  );
-
-router
-  .route('/:id')
-  .all(authMiddleware.protect, authMiddleware.restrictTo('ADMIN'))
-  .get(userController.getUser)
-  .patch(validateZod(updateProfileSchema), userController.updateUser)
-  .delete(userController.deleteUser);
+// ADMIN ROUTES MOVED TO /admin/users
 
 export default router;

@@ -4,21 +4,60 @@ import * as userService from '../services/user.service.js';
 import catchAsync from '../utils/catchAsync.js';
 import apiResponse from '../utils/apiResponse.js';
 
+const setAuthCookie = (res, req, token) => {
+  const origin = req.headers.origin || '';
+
+  // default assumptions
+  let isLocal = origin.includes('localhost') || origin.includes('127.0.0.1');
+  let cookieDomain;
+
+  // try to derive a sensible cookie domain from the request origin
+  try {
+    if (origin) {
+      const hostname = new URL(origin).hostname;
+      if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+        isLocal = true;
+      }
+
+      // Production frontend: www.coloredbricksstudio.com -> set cookie for parent domain
+      if (hostname.endsWith('coloredbricksstudio.com')) {
+        cookieDomain = '.coloredbricksstudio.com';
+      }
+      // Railway dev domain (e.g. cbsbackend-development.up.railway.app)
+      else if (
+        hostname.endsWith('railway.app') ||
+        hostname.endsWith('up.railway.app')
+      ) {
+        // use the public railway parent domain so cookies apply to the app subdomain
+        cookieDomain = '.up.railway.app';
+      }
+      // Vercel / other hosting: leave undefined to allow host default
+      else {
+        cookieDomain = undefined;
+      }
+    }
+  } catch (err) {
+    // if origin parsing fails, fall back to defaults (no domain override)
+    cookieDomain = undefined;
+  }
+
+  const expiresDate = new Date(
+    Date.now() + (process.env.JWT_COOKIE_EXPIRES_IN || 90) * 24 * 60 * 60 * 1000
+  );
+
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: !isLocal, // true in production (HTTPS), false locally
+    sameSite: isLocal ? 'lax' : 'none',
+    expires: expiresDate,
+    domain: cookieDomain,
+    path: '/'
+  });
+};
+
 const createSendToken = (user, token, statusCode, req, res) => {
   user.password = undefined;
-
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() + 90 * 24 * 60 * 60 * 1000 // 90 days
-    ),
-    httpOnly: true,
-    secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
-  };
-
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
-
-  res.cookie('jwt', token, cookieOptions);
-
+  setAuthCookie(res, req, token);
   apiResponse(res, statusCode, 'Login Successfull', { user, token });
 };
 
@@ -30,6 +69,12 @@ export const signUp = catchAsync(async (req, res, next) => {
 export const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
   const { user, token } = await authService.login(email, password);
+  createSendToken(user, token, 200, req, res);
+});
+
+export const adminLogin = catchAsync(async (req, res, next) => {
+  const { email, password } = req.body;
+  const { user, token } = await authService.adminLogin(email, password);
   createSendToken(user, token, 200, req, res);
 });
 

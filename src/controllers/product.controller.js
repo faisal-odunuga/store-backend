@@ -12,6 +12,11 @@ export const getAllProducts = catchAsync(async (req, res, next) => {
   apiResponse(res, 200, 'Products retrieved successfully', result);
 });
 
+export const getProductsByCategory = catchAsync(async (req, res, next) => {
+  const result = await productService.getProductsByCategory(req.params.category);
+  apiResponse(res, 200, 'Products retrieved successfully', result);
+});
+
 export const getProduct = catchAsync(async (req, res, next) => {
   const product = await productService.getProductById(req.params.id);
   apiResponse(res, 200, 'Product retrieved successfully', { product });

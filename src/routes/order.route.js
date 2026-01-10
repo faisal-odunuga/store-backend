@@ -11,22 +11,8 @@ router
   .post(authMiddleware.protect, orderController.createOrder)
   .get(authMiddleware.protect, orderController.getMyOrders);
 
-router
-  .route('/admin/all-orders')
-  .get(
-    authMiddleware.protect,
-    authMiddleware.restrictTo('ADMIN'),
-    orderController.getAllOrders
-  );
+// ADMIN ROUTES MOVED TO /admin/orders
 
-router
-  .route('/:id')
-  .get(authMiddleware.protect, orderController.getOrder)
-  .patch(
-    authMiddleware.protect,
-    authMiddleware.restrictTo('ADMIN'),
-    validateZod(updateOrderStatusSchema.partial()),
-    orderController.updateOrderStatus
-  );
+router.route('/:id').get(authMiddleware.protect, orderController.getOrder);
 
 export default router;

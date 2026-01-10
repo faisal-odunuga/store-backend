@@ -59,6 +59,13 @@ export const getAllProducts = async query => {
   return { products, total, page, totalPages: Math.ceil(total / limit) };
 };
 
+export const getProductsByCategory = async category => {
+  const products = await prisma.product.findMany({
+    where: { category: { equals: category, mode: 'insensitive' } }
+  });
+  return { products };
+};
+
 export const getProductById = async id => {
   const product = await prisma.product.findUnique({ where: { id } });
   if (!product) throw new AppError('Product not found', 404);

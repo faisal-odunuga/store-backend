@@ -5,8 +5,8 @@ import cartRouter from './cart.route.js';
 import orderRouter from './order.route.js';
 import userRouter from './user.route.js';
 import paymentRouter from './payment.route.js';
-import statsRouter from './stats.route.js';
 import reviewRouter from './review.route.js';
+import adminRouter from './admin/index.js';
 
 const router = express.Router();
 
@@ -17,7 +17,9 @@ router.use('/cart', cartRouter);
 router.use('/orders', orderRouter);
 router.use('/users', userRouter);
 router.use('/payments', paymentRouter);
-router.use('/stats', statsRouter);
 router.use('/reviews', reviewRouter);
+
+// Admin Routes
+router.use('/admin', adminRouter);
 
 export default router;
