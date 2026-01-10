@@ -22,7 +22,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: ['https://store-frontend-test.vercel.app'],
     credentials: true
   })
 );
@@ -43,7 +43,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const limiter = rateLimit({
-  max: 100,
+  max: 1000,
   windowMs: 15 * 60 * 1000,
   message: 'Too many requests from this IP. Please try again in an hour'
 });

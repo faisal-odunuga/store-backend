@@ -1,10 +1,16 @@
 import * as orderService from '../services/order.service.js';
 import catchAsync from '../utils/catchAsync.js';
 import apiResponse from '../utils/apiResponse.js';
+import * as paymentService from '../services/payment.service.js';
 
 export const createOrder = catchAsync(async (req, res, next) => {
   const order = await orderService.createOrder(req.user.id);
-  apiResponse(res, 201, 'Order created successfully', { order });
+
+  const paymentData = await paymentService.initializePayment(
+    order.id,
+    req.user
+  );
+  apiResponse(res, 201, 'Order created successfully', { ...paymentData });
 });
 
 export const getMyOrders = catchAsync(async (req, res, next) => {

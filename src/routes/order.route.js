@@ -12,7 +12,7 @@ router
   .get(authMiddleware.protect, orderController.getMyOrders);
 
 router
-  .route('/all-orders')
+  .route('/admin/all-orders')
   .get(
     authMiddleware.protect,
     authMiddleware.restrictTo('ADMIN'),

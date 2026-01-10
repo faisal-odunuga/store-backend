@@ -29,3 +29,9 @@ export const updateUserProfile = async (userId, updateData) => {
   user.password = undefined;
   return user;
 };
+
+export const deleteUser = async userId => {
+  await prisma.user.delete({
+    where: { id: userId }
+  });
+};

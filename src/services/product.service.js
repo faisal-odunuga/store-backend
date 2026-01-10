@@ -1,11 +1,23 @@
 import prisma from '../config/prismaClient.js';
 import AppError from '../utils/appError.js';
+import cloudinary from '../config/cloudinary.config.js';
 
-export const createProduct = async (productData, imageUrl) => {
+export const createProduct = async (productData, file) => {
+  let imageUrl = null;
+
+  if (file) {
+    const b64 = Buffer.from(file.buffer).toString('base64');
+    let dataURI = 'data:' + file.mimetype + ';base64,' + b64;
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: 'products'
+    });
+    imageUrl = result.secure_url;
+  }
+
   const product = await prisma.product.create({
     data: {
       ...productData,
-      imageUrl, // URL is now passed directly from controller (via multer-s3)
+      imageUrl,
       price: parseFloat(productData.price),
       stock: parseInt(productData.stock, 10)
     }

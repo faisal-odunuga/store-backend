@@ -18,3 +18,11 @@ export const EMAIL_HOST = process.env.EMAIL_HOST;
 export const EMAIL_USERNAME = process.env.EMAIL_USERNAME;
 export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
 export const EMAIL_PORT = process.env.EMAIL_PORT;
+
+export const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY;
+export const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+
+export const FRONTEND_URL =
+  process.env.NODE_ENV === 'development'
+    ? process.env.FRONTEND_URL_DEV
+    : process.env.FRONTEND_URL_PROD;

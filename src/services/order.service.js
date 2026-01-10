@@ -71,7 +71,18 @@ export const getUserOrders = async userId => {
 export const getOrderById = async id => {
   const order = await prisma.order.findUnique({
     where: { id },
-    include: { orderItems: { include: { product: true } }, user: true }
+    include: {
+      orderItems: { include: { product: true } },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true
+        }
+      }
+    }
   });
   if (!order) throw new AppError('Order not found', 404);
   return order;
@@ -79,7 +90,17 @@ export const getOrderById = async id => {
 
 export const getAllOrders = async () => {
   return await prisma.order.findMany({
-    include: { user: true },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          address: true
+        }
+      }
+    },
     orderBy: { createdAt: 'desc' }
   });
 };

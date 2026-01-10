@@ -4,14 +4,7 @@ import * as userService from '../services/user.service.js';
 import catchAsync from '../utils/catchAsync.js';
 import apiResponse from '../utils/apiResponse.js';
 
-const signToken = id => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
-  });
-};
-
-const createSendToken = (user, statusCode, req, res) => {
-  const token = signToken(user.id);
+const createSendToken = (user, token, statusCode, req, res) => {
   user.password = undefined;
 
   const cookieOptions = {
@@ -26,18 +19,18 @@ const createSendToken = (user, statusCode, req, res) => {
 
   res.cookie('jwt', token, cookieOptions);
 
-  apiResponse(res, statusCode, 'Login Successfull', { user });
+  apiResponse(res, statusCode, 'Login Successfull', { user, token });
 };
 
 export const signUp = catchAsync(async (req, res, next) => {
-  const { user } = await authService.register(req.body);
-  createSendToken(user, 201, req, res);
+  const { user, token } = await authService.register(req.body);
+  createSendToken(user, token, 201, req, res);
 });
 
 export const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
-  const { user } = await authService.login(email, password);
-  createSendToken(user, 200, req, res);
+  const { user, token } = await authService.login(email, password);
+  createSendToken(user, token, 200, req, res);
 });
 
 export const forgotPassword = catchAsync(async (req, res, next) => {
@@ -46,22 +39,20 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 export const resetPassword = catchAsync(async (req, res, next) => {
-  const { user } = await authService.resetPassword(
+  const { user, token } = await authService.resetPassword(
     req.params.token,
     req.body.password
   );
-  createSendToken(user, 200, req, res);
+  createSendToken(user, token, 200, req, res);
 });
 
 export const changePassword = catchAsync(async (req, res, next) => {
-  console.log(req.user.id, req.body.oldPassword, req.body.newPassword);
-
-  const { user } = await authService.changePassword(
+  const { user, token } = await authService.changePassword(
     req.user.id,
     req.body.oldPassword,
     req.body.newPassword
   );
-  createSendToken(user, 200, req, res);
+  createSendToken(user, token, 200, req, res);
 });
 
 export const getLoggedInUser = catchAsync(async (req, res, next) => {

@@ -4,7 +4,6 @@ import apiResponse from '../utils/apiResponse.js';
 
 export const addToCart = catchAsync(async (req, res, next) => {
   const { productId, quantity } = req.body;
-  console.log(req.body);
 
   const cartItem = await cartService.addToCart(
     req.user.id,
@@ -23,16 +22,11 @@ export const updateCartItem = catchAsync(async (req, res, next) => {
   const { id: productId } = req.params;
   const { quantity } = req.body;
 
-  console.log(productId, 'productId');
-  console.log(req.user.id, 'userId');
-  console.log(quantity, 'quantity');
-
   const cartItem = await cartService.updateCartItem(
     req.user.id,
     productId,
     quantity
   );
-  console.log(cartItem, 'cart');
 
   apiResponse(res, 200, 'Cart item updated', { cartItem });
 });

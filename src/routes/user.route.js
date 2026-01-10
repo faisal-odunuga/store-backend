@@ -24,4 +24,11 @@ router
     userController.getAllUsers
   );
 
+router
+  .route('/:id')
+  .all(authMiddleware.protect, authMiddleware.restrictTo('ADMIN'))
+  .get(userController.getUser)
+  .patch(validateZod(updateProfileSchema), userController.updateUser)
+  .delete(userController.deleteUser);
+
 export default router;

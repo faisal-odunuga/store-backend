@@ -2,22 +2,8 @@ import * as productService from '../services/product.service.js';
 import catchAsync from '../utils/catchAsync.js';
 import apiResponse from '../utils/apiResponse.js';
 
-import cloudinary from '../config/cloudinary.config.js';
-
 export const createProduct = catchAsync(async (req, res, next) => {
-  let imageUrl = null;
-
-  if (req.file) {
-    // Upload to Cloudinary
-    const b64 = Buffer.from(req.file.buffer).toString('base64');
-    let dataURI = 'data:' + req.file.mimetype + ';base64,' + b64;
-    const result = await cloudinary.uploader.upload(dataURI, {
-      folder: 'products'
-    });
-    imageUrl = result.secure_url;
-  }
-
-  const product = await productService.createProduct(req.body, imageUrl);
+  const product = await productService.createProduct(req.body, req.file);
   apiResponse(res, 201, 'Product created successfully', { product });
 });
 
