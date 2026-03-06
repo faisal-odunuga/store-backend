@@ -16,13 +16,24 @@ import { FRONTEND_URL } from './src/secrets.js';
 
 const app = express();
 
+// Needed on platforms like Render/Heroku to trust X-Forwarded-* headers
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(hpp());
 app.use(cookieParser());
 
+const allowedOrigins = Array.isArray(FRONTEND_URL) ? FRONTEND_URL : [FRONTEND_URL].filter(Boolean);
+
 app.use(
   cors({
-    origin: [FRONTEND_URL],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (!allowedOrigins.length || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new AppError('Not allowed by CORS', 403), false);
+    },
     credentials: true
   })
 );

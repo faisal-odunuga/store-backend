@@ -18,10 +18,22 @@ export const EMAIL_PORT = process.env.EMAIL_PORT;
 export const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY;
 export const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
+const normalizeOrigins = value => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
 export const FRONTEND_URL =
   process.env.NODE_ENV === 'development'
-    ? [process.env.FRONTEND_URL_DEV, process.env.FRONTEND_URL_DEV2]
-    : process.env.FRONTEND_URL_PROD;
+    ? normalizeOrigins([process.env.FRONTEND_URL_DEV, process.env.FRONTEND_URL_DEV2])
+    : normalizeOrigins([process.env.FRONTEND_URL_PROD, process.env.FRONTEND_URL_PROD2]);
 
 export const CLERK_PUBLISHABLE_KEY = process.env.CLERK_PUBLISHABLE_KEY;
 export const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
