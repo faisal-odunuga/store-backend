@@ -11,14 +11,15 @@ export const updateProfileSchema = z
 
     phone: z
       .string()
-      .regex(/^[0-9]{11}$/, 'Phone number must be 11 digits')
-      .optional()
-      .or(z.literal('')),
-
-    address: z
-      .string()
       .trim()
-      .max(200, 'Address too long')
+      .max(15, 'Phone number too long')
       .optional()
+      .or(z.literal(''))
   })
   .strict({ message: 'Unknown field(s) provided' });
+
+export const updateUserRoleSchema = z
+  .object({
+    role: z.enum(['ADMIN', 'MANAGER', 'CUSTOMER'])
+  })
+  .strict();

@@ -5,38 +5,38 @@ import helmet from 'helmet';
 import hpp from 'hpp';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import { clerkMiddleware } from '@clerk/express';
 
 import messages from './src/messages/index.js';
 import AppError from './src/utils/appError.js';
 import globalErrorHandler from './src/controllers/error.controller.js';
-import * as paymentController from './src/controllers/payment.controller.js';
 
-import apiRoutes from './src/routes/index.js'; // 👈 import the global route handler
+import apiRoutes from './src/routes/index.js';
 import { FRONTEND_URL } from './src/secrets.js';
 
 const app = express();
 
 app.use(helmet());
-// app.use(xss());
 app.use(hpp());
 app.use(cookieParser());
 
 app.use(
   cors({
-    origin: [FRONTEND_URL ],
+    origin: [FRONTEND_URL],
     credentials: true
   })
 );
 
-// ─── WEBHOOKS ──────────────────────────────────
-// Stripe webhook needs raw body, so it must be defined before express.json()
-// app.post(
-//   '/api/v1/payments/webhook',
-//   express.raw({ type: 'application/json' }),
-//   paymentController.webhook
-// );
+// ─── CLERK MIDDLEWARE ───────────────────────────
+// Attaches Clerk auth state to every request automatically.
+// Protected routes then call getAuth(req) to verify.
+app.use(clerkMiddleware());
 
-// ─── MIDDLEWARE ────────────────────────────────
+// ─── WEBHOOK (raw body required for svix verification) ─
+// Must come BEFORE express.json() global middleware
+app.use('/api/v1/auth/webhook', express.raw({ type: 'application/json' }));
+
+// ─── GLOBAL MIDDLEWARE ──────────────────────────
 app.use(express.json({ limit: '10kb' }));
 
 if (process.env.NODE_ENV === 'development') {
@@ -51,7 +51,6 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // ─── ROUTES ────────────────────────────────────
-
 app.get('/', (req, res) => {
   res.status(200).json({
     status: messages.success,
@@ -66,7 +65,6 @@ app.get('/api/v1', (req, res) => {
   });
 });
 
-// Global route handler
 app.use('/api/v1', apiRoutes);
 
 // ─── UNHANDLED ROUTES ──────────────────────────

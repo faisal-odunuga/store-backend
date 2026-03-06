@@ -1,18 +1,19 @@
 import express from 'express';
 import * as orderController from '../controllers/order.controller.js';
-import * as authMiddleware from '../middlewares/auth.js';
-import validateZod from '../middlewares/validateZod.js';
-import { updateOrderStatusSchema } from '../validators/order.schema.js';
+import * as authMiddleware from '../middlewares/auth.middleware.js';
+import validateZod from '../middlewares/zod.middleware.js';
+import { createOrderSchema } from '../validators/order.schema.js';
 
 const router = express.Router();
 
+router.use(authMiddleware.protect);
+router.use(authMiddleware.restrictTo('CUSTOMER'));
+
 router
   .route('/')
-  .post(authMiddleware.protect, orderController.createOrder)
-  .get(authMiddleware.protect, orderController.getMyOrders);
+  .post(validateZod(createOrderSchema), orderController.createOrder)
+  .get(orderController.getMyOrders);
 
-// ADMIN ROUTES MOVED TO /admin/orders
-
-router.route('/:id').get(authMiddleware.protect, orderController.getOrder);
+router.route('/:id').get(orderController.getOrder);
 
 export default router;

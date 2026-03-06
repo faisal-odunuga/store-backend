@@ -1,7 +1,3 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 export const PORT = process.env.PORT;
 export const NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -24,5 +20,12 @@ export const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 export const FRONTEND_URL =
   process.env.NODE_ENV === 'development'
-    ? process.env.FRONTEND_URL_DEV
+    ? [process.env.FRONTEND_URL_DEV, process.env.FRONTEND_URL_DEV2]
     : process.env.FRONTEND_URL_PROD;
+
+export const CLERK_PUBLISHABLE_KEY = process.env.CLERK_PUBLISHABLE_KEY;
+export const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
+
+export const ORDER_RESERVATION_MINUTES = Number(
+  process.env.ORDER_RESERVATION_MINUTES ?? 30
+);
