@@ -7,8 +7,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js",
-    "start:prod": "NODE_ENV=production nodemon server.js",
+    "start": "npx prisma migrate deploy && npx prisma generate && nodemon server.js",
+    "start:prod": "NODE_ENV=production npx prisma migrate deploy && npx prisma generate && node server.js",
     "debug": "ndb server.js",
     "seed": "npx prisma db seed",
     "roles:migrate": "node src/jobs/migrateRoles.js",
