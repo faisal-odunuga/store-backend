@@ -9,7 +9,18 @@ const clerkClient = process.env.CLERK_SECRET_KEY
   : null;
 
 export const protect = catchAsync(async (req, res, next) => {
-  const { userId: clerkId } = getAuth(req);
+  const auth = getAuth(req);
+  const { userId: clerkId } = auth;
+
+  // console.log('--- Auth Debug ---');
+  // console.log('URL:', req.originalUrl);
+  // console.log(
+  //   'Authorization Header:',
+  //   req.headers.authorization ? 'Present' : 'Missing'
+  // );
+  // console.log('ClerkId Header:', req.headers.clerkid);
+  // console.log('getAuth userId:', clerkId);
+  // console.log('------------------');
 
   if (!clerkId) {
     return next(
@@ -30,8 +41,11 @@ export const protect = catchAsync(async (req, res, next) => {
 
     const clerkUser = await clerkClient.users.getUser(clerkId);
     const email = clerkUser.emailAddresses?.[0]?.emailAddress;
-    const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ');
-    const role = clerkUser.privateMetadata?.role || clerkUser.publicMetadata?.role;
+    const name = [clerkUser.firstName, clerkUser.lastName]
+      .filter(Boolean)
+      .join(' ');
+    const role =
+      clerkUser.privateMetadata?.role || clerkUser.publicMetadata?.role;
 
     currentUser = await syncClerkUser({ clerkId, email, name, role });
   }

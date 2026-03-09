@@ -21,9 +21,60 @@ export const getDashboardStats = async () => {
   // Get low stock the Prisma-compatible way
   const allActive = await prisma.product.findMany({
     where: { isActive: true },
-    select: { id: true, stock: true, lowStockAlert: true }
+    select: {
+      id: true,
+      name: true,
+      sku: true,
+      stock: true,
+      lowStockAlert: true
+    }
   });
-  const lowStock = allActive.filter(p => p.stock <= p.lowStockAlert).length;
+
+  const lowStockItems = allActive.filter(p => p.stock <= p.lowStockAlert);
+  const lowStockCount = lowStockItems.length;
+  const lowStockProductsList = lowStockItems
+    .sort((a, b) => a.stock - b.stock)
+    .slice(0, 5);
+
+  const recentTransactions = await prisma.order.findMany({
+    take: 5,
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      orderNumber: true,
+      totalAmount: true,
+      status: true,
+      paymentStatus: true,
+      createdAt: true,
+      user: { select: { name: true } }
+    }
+  });
+
+  const topSellingCounts = await prisma.orderItem.groupBy({
+    by: ['productId'],
+    _sum: { quantity: true },
+    orderBy: { _sum: { quantity: 'desc' } },
+    take: 5
+  });
+
+  const topSellingProducts = await Promise.all(
+    topSellingCounts.map(async item => {
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          category: true,
+          imageUrl: true
+        }
+      });
+      return {
+        ...product,
+        totalSold: item._sum.quantity
+      };
+    })
+  );
 
   return {
     users: userCount,
@@ -31,8 +82,11 @@ export const getDashboardStats = async () => {
     products: productCount,
     revenue: revenueAgg._sum.totalAmount || 0,
     profit: revenueAgg._sum.profitAmount || 0,
-    lowStockProducts: lowStock,
-    pendingOrders: pendingOrderCount
+    lowStockProducts: lowStockCount,
+    pendingOrders: pendingOrderCount,
+    lowStockProductsList,
+    recentTransactions,
+    topSellingProducts
   };
 };
 

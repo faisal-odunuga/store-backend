@@ -1,11 +1,17 @@
 import { z } from 'zod';
 
 const numericField = label =>
-  z.preprocess(val => {
-    if (typeof val === 'string' && val.trim() !== '') return parseFloat(val);
-    if (typeof val === 'number') return val;
-    return undefined;
-  }, z.number({ required_error: `${label} is required`, invalid_type_error: `${label} must be a number` }).positive(`${label} must be greater than 0`));
+  z.preprocess(
+    val => {
+      if (typeof val === 'string' && val.trim() !== '') return parseFloat(val);
+      if (typeof val === 'number') return val;
+      return undefined;
+    },
+    z
+      .number({ invalid_type_error: `${label} must be a number` })
+      .positive(`${label} must be greater than 0`)
+      .optional()
+  );
 
 const intField = label =>
   z.preprocess(
@@ -19,7 +25,7 @@ const intField = label =>
       .number({ invalid_type_error: `${label} must be a number` })
       .int()
       .min(0)
-      .default(0)
+      .optional()
   );
 
 export const productSchema = z.object({
