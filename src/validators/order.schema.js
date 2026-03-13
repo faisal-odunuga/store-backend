@@ -14,9 +14,31 @@ export const createOrderSchema = z.object({
     .min(1, 'Order must have at least one item'),
 
   shippingAddress: z
-    .string({ required_error: 'Shipping address is required' })
+    .string()
     .trim()
-    .min(5, 'Shipping address must be at least 5 characters'),
+    .min(5, 'Shipping address must be at least 5 characters')
+    .optional(),
+
+  addressId: z
+    .string()
+    .uuid('Invalid address ID')
+    .optional(),
+
+  contactName: z
+    .string()
+    .trim()
+    .min(2, 'Name must be at least 2 characters')
+    .optional(),
+
+  contactEmail: z
+    .string()
+    .email('Invalid email')
+    .optional(),
+
+  contactPhone: z
+    .string()
+    .trim()
+    .optional(),
 
   paymentMethod: z
     .string()
@@ -26,7 +48,11 @@ export const createOrderSchema = z.object({
     .number()
     .min(0)
     .optional()
-});
+})
+.refine(
+  data => data.shippingAddress || data.addressId,
+  'Provide either a shippingAddress or addressId'
+);
 
 export const updateOrderStatusSchema = z
   .object({

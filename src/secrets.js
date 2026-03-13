@@ -30,14 +30,10 @@ const normalizeOrigins = value => {
   return [];
 };
 
-export const FRONTEND_URL =
-  process.env.NODE_ENV === 'development'
-    ? normalizeOrigins([process.env.FRONTEND_URL_DEV, process.env.FRONTEND_URL_DEV2])
-    : normalizeOrigins([process.env.FRONTEND_URL_PROD, process.env.FRONTEND_URL_PROD2]);
+export const FRONTEND_URL = normalizeOrigins([
+  process.env.STOREFRONT_URL,
+  process.env.ADMIN_WEB_URL
+]);
 
 export const CLERK_PUBLISHABLE_KEY = process.env.CLERK_PUBLISHABLE_KEY;
 export const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
-
-export const ORDER_RESERVATION_MINUTES = Number(
-  process.env.ORDER_RESERVATION_MINUTES ?? 30
-);

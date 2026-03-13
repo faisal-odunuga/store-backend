@@ -1,5 +1,5 @@
 import express from 'express';
-import * as userController from '../../controllers/user.controller.js';
+import * as adminController from '../../controllers/admin.controller.js';
 import {
   updateProfileSchema,
   updateUserRoleSchema
@@ -13,17 +13,17 @@ router.use(authMiddleware.protect, authMiddleware.restrictTo('ADMIN'));
 
 router
   .route('/')
-  .get(userController.getAllUsers)
-  .post(userController.createManager);
+  .get(adminController.getAllUsers)
+  .post(adminController.createManager);
 
 router
   .route('/:id')
-  .get(userController.getUser)
-  .patch(validateZod(updateProfileSchema), userController.updateUser)
-  .delete(userController.deleteUser);
+  .get(adminController.getUser)
+  .patch(validateZod(updateProfileSchema), adminController.updateUser)
+  .delete(adminController.deleteUser);
 
 router
   .route('/:id/role')
-  .patch(validateZod(updateUserRoleSchema), userController.updateUserRole);
+  .patch(validateZod(updateUserRoleSchema), adminController.updateUserRole);
 
 export default router;

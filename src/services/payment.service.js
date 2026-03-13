@@ -2,61 +2,67 @@ import paystack from '../config/paystack.config.js';
 import prisma from '../config/prismaClient.js';
 import AppError from '../utils/appError.js';
 import messages from '../messages/index.js';
-import { FRONTEND_URL } from '../secrets.js';
-import { releaseOrderReservation } from './order.service.js';
+import { FRONTEND_URL, PAYSTACK_SECRET_KEY } from '../secrets.js';
+import { processSuccessfulPayment } from './order.service.js';
 
-export const initializePayment = async (orderId, user) => {
-  // 1. Get order details
+/**
+ * Validates order state, ownership, and amount before payment.
+ */
+const validateOrderForPayment = async (orderId, userId) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
       user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true
-        }
+        select: { id: true, email: true }
       }
     }
   });
 
-  if (!order) {
-    throw new AppError(messages.error.orderNotFound, 404);
-  }
-  if (order.userId !== user.id) {
+  if (!order) throw new AppError(messages.error.orderNotFound, 404);
+  if (order.userId !== userId) {
     throw new AppError('You are not authorized to pay for this order', 403);
   }
-
-  // 2. Check if order is already paid, cancelled, or expired
   if (order.paymentStatus === 'PAID') {
     throw new AppError('Order is already paid', 400);
   }
   if (['CANCELLED', 'REFUNDED'].includes(order.status)) {
     throw new AppError('Order cannot be paid in its current state', 400);
   }
-  if (order.expiresAt && order.expiresAt < new Date()) {
-    await releaseOrderReservation(order.id, 'Payment window expired');
-    throw new AppError('Payment window expired. Please place a new order.', 400);
-  }
   if (order.totalAmount <= 0) {
     throw new AppError('Invalid order total amount', 400);
   }
 
-  // 3. Initialize Paystack transaction
-  // Amount is in kobo, so multiply by 100
-  const amountInKobo = Math.round(order.totalAmount * 100);
+  return order;
+};
+
+/**
+ * Prepares the Paystack initialization payload.
+ */
+const preparePaystackPayload = (order, callbackUrl) => {
+  const defaultCallback = Array.isArray(FRONTEND_URL)
+    ? FRONTEND_URL[0]
+    : FRONTEND_URL;
+
+  return {
+    email: order.user.email,
+    amount: Math.round(order.totalAmount * 100), // convert to kobo
+    metadata: {
+      orderId: order.id,
+      userId: order.userId
+    },
+    callback_url: callbackUrl || `${defaultCallback}/payment/callback`
+  };
+};
+
+export const initializePayment = async (orderId, user, callbackUrl) => {
+  // 1. Validate
+  const order = await validateOrderForPayment(orderId, user.id);
+
+  // 2. Prepare & Initialize
+  const payload = preparePaystackPayload(order, callbackUrl);
 
   try {
-    const response = await paystack.post('/transaction/initialize', {
-      email: user.email,
-      amount: amountInKobo,
-      metadata: {
-        orderId: order.id,
-        userId: user.id
-      },
-      callback_url: `${FRONTEND_URL}/payment/callback`
-    });
+    const response = await paystack.post('/transaction/initialize', payload);
 
     const reference = response.data?.data?.reference;
     if (reference) {
@@ -76,9 +82,7 @@ export const initializePayment = async (orderId, user) => {
       reference
     };
   } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
+    if (error instanceof AppError) throw error;
     throw new AppError('Payment initialization failed: ' + error.message, 500);
   }
 };
@@ -89,7 +93,9 @@ export const verifyPayment = async reference => {
   }
 
   try {
-    const response = await paystack.get(`/transaction/verify/${reference}`);
+    const response = await paystack.get(
+      `/transaction/verify/${encodeURIComponent(reference)}`
+    );
     const { status, metadata, amount, currency } = response.data.data || {};
     const orderId = metadata?.orderId;
 
@@ -107,10 +113,6 @@ export const verifyPayment = async reference => {
     if (['CANCELLED', 'REFUNDED'].includes(order.status)) {
       throw new AppError('Order cannot be paid in its current state', 400);
     }
-    if (order.expiresAt && order.expiresAt < new Date()) {
-      await releaseOrderReservation(order.id, 'Payment window expired');
-      throw new AppError('Payment window expired. Please place a new order.', 400);
-    }
 
     const expectedAmount = Math.round(order.totalAmount * 100);
     if (Number.isFinite(amount) && amount !== expectedAmount) {
@@ -121,17 +123,7 @@ export const verifyPayment = async reference => {
     }
 
     if (status === 'success') {
-      const updatedOrder = await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: order.status === 'PENDING' ? 'PROCESSING' : order.status,
-          paymentStatus: 'PAID',
-          transactionRef: reference,
-          paymentMethod: order.paymentMethod ?? 'PAYSTACK'
-        }
-      });
-
-      return updatedOrder;
+      return await processSuccessfulPayment(orderId, reference);
     } else {
       await prisma.order.update({
         where: { id: orderId },

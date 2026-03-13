@@ -12,11 +12,43 @@ const uploadProductImage = async file => {
   return result.secure_url;
 };
 
+const parseImages = images => {
+  if (!images) return [];
+  if (Array.isArray(images)) return images.filter(Boolean);
+  if (typeof images === 'string') {
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {
+      // not JSON, maybe comma-separated
+      return images
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+  }
+  return [];
+};
+
+const parseSpecs = specs => {
+  if (!specs) return null;
+  if (typeof specs === 'string') {
+    try {
+      return JSON.parse(specs);
+    } catch {
+      return [specs]; // fallback single string
+    }
+  }
+  return specs; // allow object/array
+};
+
 export const createProduct = async (productData, file) => {
-  let imageUrl = productData.imageUrl || null;
+  let images = parseImages(productData.images);
+  const specs = parseSpecs(productData.specs);
 
   if (file) {
-    imageUrl = await uploadProductImage(file);
+    const uploaded = await uploadProductImage(file);
+    images = images.length ? images : [uploaded];
   }
 
   const costPrice = parseFloat(productData.costPrice);
@@ -45,7 +77,8 @@ export const createProduct = async (productData, file) => {
       lowStockAlert: parseInt(productData.lowStockAlert ?? 5, 10),
       weight: productData.weight ? parseFloat(productData.weight) : null,
       category: productData.category,
-      imageUrl,
+      images,
+      specs,
       isActive: productData.isActive !== undefined ? productData.isActive : true
     }
   });
@@ -54,7 +87,17 @@ export const createProduct = async (productData, file) => {
 };
 
 export const getAllProducts = async query => {
-  const { category, search, sort, page = 1, limit = 10, isActive } = query;
+  const {
+    category,
+    search,
+    sort,
+    page = 1,
+    limit = 10,
+    isActive,
+    minPrice,
+    maxPrice,
+    inStock
+  } = query;
   const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
   const pageSize = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
   const skip = (pageNumber - 1) * pageSize;
@@ -62,6 +105,17 @@ export const getAllProducts = async query => {
   const where = {};
   if (category) where.category = { equals: category, mode: 'insensitive' };
   if (isActive !== undefined) where.isActive = isActive === 'true';
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.sellingPrice = {};
+    if (minPrice !== undefined) where.sellingPrice.gte = parseFloat(minPrice);
+    if (maxPrice !== undefined) where.sellingPrice.lte = parseFloat(maxPrice);
+  }
+  if (inStock !== undefined) {
+    const wantsStock = inStock === 'true' || inStock === true;
+    if (wantsStock) {
+      where.stock = { gt: 0 };
+    }
+  }
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -75,9 +129,11 @@ export const getAllProducts = async query => {
       ? { sellingPrice: 'asc' }
       : sort === 'price_desc'
       ? { sellingPrice: 'desc' }
+      : sort === 'oldest'
+      ? { createdAt: 'asc' }
       : { createdAt: 'desc' };
 
-  const [products, total] = await Promise.all([
+  const [products, total, categoriesResult] = await Promise.all([
     prisma.product.findMany({
       skip,
       take: pageSize,
@@ -91,20 +147,33 @@ export const getAllProducts = async query => {
         discountPrice: true,
         stock: true,
         lowStockAlert: true,
-        imageUrl: true,
+        images: true,
+        specs: true,
         isActive: true,
         createdAt: true
       },
       orderBy
     }),
-    prisma.product.count({ where })
+    prisma.product.count({ where }),
+    prisma.product.findMany({
+      where: { isActive: true },
+      select: { category: true },
+      distinct: ['category']
+    })
   ]);
+
+  const categories = categoriesResult
+    .map(item => item.category)
+    .filter(Boolean)
+    .filter((value, index, self) => self.indexOf(value) === index)
+    .sort((a, b) => a.localeCompare(b));
 
   return {
     products,
     total,
     page: pageNumber,
-    totalPages: Math.ceil(total / pageSize)
+    totalPages: Math.ceil(total / pageSize),
+    categories
   };
 };
 
@@ -123,7 +192,24 @@ export const getProductById = async idOrSku => {
     where: {
       OR: [{ id: idOrSku }, { sku: { equals: idOrSku, mode: 'insensitive' } }]
     },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      sku: true,
+      barcode: true,
+      costPrice: true,
+      sellingPrice: true,
+      discountPrice: true,
+      stock: true,
+      lowStockAlert: true,
+      weight: true,
+      category: true,
+      images: true,
+      specs: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
       reviews: {
         select: {
           id: true,
@@ -143,7 +229,18 @@ export const updateProduct = async (id, updateData, file) => {
   const data = { ...updateData };
 
   if (file) {
-    data.imageUrl = await uploadProductImage(file);
+    const uploaded = await uploadProductImage(file);
+    // append uploaded file to images array
+    const existing = parseImages(updateData.images);
+    data.images = [...existing, uploaded].filter(Boolean);
+  }
+
+  if (updateData.images !== undefined && !file) {
+    data.images = parseImages(updateData.images);
+  }
+
+  if (updateData.specs !== undefined) {
+    data.specs = parseSpecs(updateData.specs);
   }
 
   if (data.costPrice !== undefined) {
@@ -286,7 +383,7 @@ export const getInventoryLogs = async productId => {
     where: { productId },
     orderBy: { createdAt: 'desc' },
     include: {
-      product: { select: { id: true, name: true, sku: true, imageUrl: true } }
+      product: { select: { id: true, name: true, sku: true, images: true } }
     }
   });
 };
@@ -311,7 +408,7 @@ export const getAllInventoryLogs = async (query = {}) => {
             id: true,
             name: true,
             sku: true,
-            imageUrl: true
+            images: true
           }
         }
       },

@@ -23,3 +23,35 @@ export const updateUserRoleSchema = z
     role: z.enum(['ADMIN', 'MANAGER', 'CUSTOMER'])
   })
   .strict();
+
+export const addressSchema = z
+  .object({
+    street: z
+      .string()
+      .trim()
+      .min(1, 'Street is required'),
+    city: z
+      .string()
+      .trim()
+      .min(1, 'City is required'),
+    state: z
+      .string()
+      .trim()
+      .optional(),
+    postalCode: z
+      .string()
+      .trim()
+      .min(1, 'Postal code is required'),
+    country: z
+      .string()
+      .trim()
+      .min(1, 'Country is required'),
+    isDefault: z.boolean().optional()
+  })
+  .strict();
+
+export const wishlistSchema = z
+  .object({
+    productId: z.string().uuid('Invalid product ID')
+  })
+  .strict();

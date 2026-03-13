@@ -1,6 +1,5 @@
 import prisma from '../config/prismaClient.js';
 import AppError from '../utils/appError.js';
-import { ORDER_RESERVATION_MINUTES } from '../secrets.js';
 
 const generateOrderNumber = () => {
   const timestamp = Date.now()
@@ -13,50 +12,36 @@ const generateOrderNumber = () => {
   return `ORD-${timestamp}-${random}`;
 };
 
-const getReservationExpiry = () => {
-  const minutes =
-    Number.isFinite(ORDER_RESERVATION_MINUTES) && ORDER_RESERVATION_MINUTES > 0
-      ? ORDER_RESERVATION_MINUTES
-      : 30;
-  return new Date(Date.now() + minutes * 60 * 1000);
-};
-
 /**
- * Creates an order from an items array directly (no Cart model in schema).
- * @param {string} userId - Internal DB user ID
- * @param {Array} items - [{ productId, quantity }]
- * @param {string} shippingAddress
- * @param {object} options - { paymentMethod, discountAmount }
+ * Normalizes input items: validates payload and merges duplicate productIds.
  */
-export const createOrder = async (
-  userId,
-  items,
-  shippingAddress,
-  options = {}
-) => {
-  const { paymentMethod, discountAmount = 0 } = options;
-
+const normalizeOrderItems = items => {
   if (!Array.isArray(items) || items.length === 0) {
     throw new AppError('Order must have at least one item', 400);
   }
 
-  const normalizedItemsMap = new Map();
+  const normalizedMap = new Map();
   items.forEach(item => {
     const qty = Number(item.quantity);
     if (!item?.productId || !Number.isFinite(qty) || qty <= 0) {
       throw new AppError('Invalid order item payload', 400);
     }
-    normalizedItemsMap.set(
+    normalizedMap.set(
       item.productId,
-      (normalizedItemsMap.get(item.productId) || 0) + qty
+      (normalizedMap.get(item.productId) || 0) + qty
     );
   });
-  const normalizedItems = Array.from(normalizedItemsMap.entries()).map(
-    ([productId, quantity]) => ({ productId, quantity })
-  );
 
-  // 1. Fetch all products at once
-  const productIds = normalizedItems.map(i => i.productId);
+  return Array.from(normalizedMap.entries()).map(([productId, quantity]) => ({
+    productId,
+    quantity
+  }));
+};
+
+/**
+ * Fetches products from database and ensures all requested IDs exist.
+ */
+const fetchProductsForOrder = async productIds => {
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } }
   });
@@ -64,28 +49,35 @@ export const createOrder = async (
   if (products.length !== productIds.length) {
     throw new AppError('One or more products not found', 404);
   }
-  const productMap = new Map(products.map(product => [product.id, product]));
 
-  // 2. Build order items and compute totals
+  return new Map(products.map(product => [product.id, product]));
+};
+
+/**
+ * Validates stock and prepares order items data with totals.
+ */
+const processOrderItems = (normalizedItems, productMap) => {
   let subtotal = 0;
   let profitAmount = 0;
 
   const orderItemsData = normalizedItems.map(item => {
     const product = productMap.get(item.productId);
-    if (!product) {
-      throw new AppError('One or more products not found', 404);
-    }
+    if (!product) throw new AppError('One or more products not found', 404);
+
     if (product.stock < item.quantity) {
       throw new AppError(
         `Insufficient stock for product: ${product.name}`,
         400
       );
     }
+
     const itemTotal = product.sellingPrice * item.quantity;
     const itemProfit =
       (product.sellingPrice - product.costPrice) * item.quantity;
+
     subtotal += itemTotal;
     profitAmount += itemProfit;
+
     return {
       productId: item.productId,
       quantity: item.quantity,
@@ -95,9 +87,17 @@ export const createOrder = async (
     };
   });
 
-  const taxAmount = 0; // configurable in future
-  const shippingFee = 0; // configurable in future
+  return { orderItemsData, subtotal, profitAmount };
+};
+
+/**
+ * Calculates final totals including discounts.
+ */
+const calculateFinalTotals = (subtotal, discountAmount = 0) => {
+  const taxAmount = 0;
+  const shippingFee = 0;
   const normalizedDiscount = Number(discountAmount) || 0;
+
   if (normalizedDiscount < 0) {
     throw new AppError('Discount amount cannot be negative', 400);
   }
@@ -106,25 +106,84 @@ export const createOrder = async (
   if (normalizedDiscount > totalBeforeDiscount) {
     throw new AppError('Discount amount cannot exceed order total', 400);
   }
-  const totalAmount = totalBeforeDiscount - normalizedDiscount;
 
-  // 3. Create everything in a transaction
-  const order = await prisma.$transaction(async tx => {
-    const newOrder = await tx.order.create({
+  return {
+    subtotal,
+    taxAmount,
+    shippingFee,
+    discountAmount: normalizedDiscount,
+    totalAmount: totalBeforeDiscount - normalizedDiscount
+  };
+};
+
+/**
+ * Creates an order from an items array directly (no Cart model in schema).
+ * @param {string} userId - Internal DB user ID
+ * @param {Array} items - [{ productId, quantity }]
+ * @param {string} shippingAddress
+ * @param {object} options - { paymentMethod, discountAmount, contactName, contactEmail, contactPhone, addressId }
+ */
+export const createOrder = async (
+  userId,
+  items,
+  shippingAddress,
+  options = {}
+) => {
+  const {
+    paymentMethod,
+    discountAmount = 0,
+    contactName,
+    contactEmail,
+    contactPhone,
+    addressId
+  } = options;
+
+  let resolvedAddress = shippingAddress;
+  let resolvedAddressId = addressId;
+
+  if (!resolvedAddress && addressId) {
+    const addr = await prisma.address.findFirst({
+      where: { id: addressId, userId }
+    });
+    if (!addr) throw new AppError('Address not found', 404);
+    resolvedAddress = `${addr.street}, ${addr.city}${
+      addr.state ? ', ' + addr.state : ''
+    }, ${addr.country}`;
+  }
+
+  if (!resolvedAddress) {
+    throw new AppError('Shipping address is required', 400);
+  }
+
+  // 1. Normalize and Fetch
+  const normalizedItems = normalizeOrderItems(items);
+  const productMap = await fetchProductsForOrder(
+    normalizedItems.map(i => i.productId)
+  );
+
+  // 2. Validate and Calculate
+  const { orderItemsData, subtotal, profitAmount } = processOrderItems(
+    normalizedItems,
+    productMap
+  );
+  const totals = calculateFinalTotals(subtotal, discountAmount);
+
+  // 3. Persist
+  return await prisma.$transaction(async tx => {
+    return await tx.order.create({
       data: {
         orderNumber: generateOrderNumber(),
         userId,
-        subtotal,
-        taxAmount,
-        shippingFee,
-        discountAmount: normalizedDiscount,
-        totalAmount,
+        ...totals,
         profitAmount,
-        shippingAddress,
+        shippingAddress: resolvedAddress,
+        shippingAddressId: resolvedAddressId,
+        contactName,
+        contactEmail,
+        contactPhone,
         paymentMethod,
         status: 'PENDING',
         paymentStatus: 'PENDING',
-        expiresAt: getReservationExpiry(),
         orderItems: { create: orderItemsData }
       },
       include: {
@@ -135,7 +194,7 @@ export const createOrder = async (
                 id: true,
                 name: true,
                 sku: true,
-                imageUrl: true,
+                images: true,
                 sellingPrice: true
               }
             }
@@ -143,104 +202,74 @@ export const createOrder = async (
         }
       }
     });
-
-    // Decrement stock and log inventory OUT
-    await Promise.all(
-      normalizedItems.map(async item => {
-        const updated = await tx.product.updateMany({
-          where: { id: item.productId, stock: { gte: item.quantity } },
-          data: { stock: { decrement: item.quantity } }
-        });
-        if (updated.count === 0) {
-          const product = productMap.get(item.productId);
-          throw new AppError(
-            `Insufficient stock for product: ${product?.name ?? item.productId}`,
-            400
-          );
-        }
-      })
-    );
-
-    await tx.inventoryLog.createMany({
-      data: normalizedItems.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        type: 'OUT',
-        note: `Order ${newOrder.orderNumber}`
-      }))
-    });
-
-    return newOrder;
   });
-
-  return order;
 };
 
-export const releaseOrderReservation = async (
-  orderId,
-  reason = 'Reservation expired'
-) => {
+/**
+ * Atomically decrements stock and logs inventory for multiple items.
+ * Designed to be used within a Prisma transaction.
+ */
+const updateStockAndInventory = async (tx, order) => {
+  // 1. Decrement stock
+  await Promise.all(
+    order.orderItems.map(async item => {
+      const updated = await tx.product.updateMany({
+        where: { id: item.productId, stock: { gte: item.quantity } },
+        data: { stock: { decrement: item.quantity } }
+      });
+      if (updated.count === 0) {
+        throw new AppError(
+          `Insufficient stock for product in order ${order.orderNumber}`,
+          400
+        );
+      }
+    })
+  );
+
+  // 2. Create inventory logs
+  await tx.inventoryLog.createMany({
+    data: order.orderItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      type: 'OUT',
+      note: `Order ${order.orderNumber} (Paid)`
+    }))
+  });
+};
+
+/**
+ * Processes a successful payment: updates status, decrements stock, and logs inventory.
+ */
+export const processSuccessfulPayment = async (orderId, transactionRef) => {
   return await prisma.$transaction(async tx => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: { orderItems: true }
     });
 
-    if (!order) {
-      throw new AppError('Order not found', 404);
-    }
+    if (!order) throw new AppError('Order not found', 404);
+    if (order.paymentStatus === 'PAID') return order;
 
-    if (order.status !== 'PENDING' || order.paymentStatus !== 'PENDING') {
-      return null;
-    }
+    // 1. Core Stock & Inventory logic
+    await updateStockAndInventory(tx, order);
 
-    await tx.order.update({
+    // 2. Update order status
+    const updatedOrder = await tx.order.update({
       where: { id: orderId },
       data: {
-        status: 'CANCELLED',
-        paymentStatus: 'FAILED'
+        status: 'PROCESSING',
+        paymentStatus: 'PAID',
+        transactionRef
       }
     });
 
-    await Promise.all(
-      order.orderItems.map(item =>
-        tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { increment: item.quantity } }
-        })
-      )
-    );
-
-    await tx.inventoryLog.createMany({
-      data: order.orderItems.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        type: 'IN',
-        note: reason
-      }))
+    // 3. Clear User Cart
+    await tx.cartItem.deleteMany({
+      where: { userId: order.userId }
     });
 
-    return order;
+    return updatedOrder;
   });
-};
-
-export const releaseExpiredOrders = async (now = new Date()) => {
-  const expiredOrders = await prisma.order.findMany({
-    where: {
-      status: 'PENDING',
-      paymentStatus: 'PENDING',
-      expiresAt: { lt: now }
-    },
-    select: { id: true }
-  });
-
-  let releasedCount = 0;
-  for (const { id } of expiredOrders) {
-    const released = await releaseOrderReservation(id, 'Reservation expired');
-    if (released) releasedCount += 1;
-  }
-
-  return { releasedCount };
 };
 
 export const getUserOrders = async userId => {
@@ -254,7 +283,7 @@ export const getUserOrders = async userId => {
               id: true,
               name: true,
               sku: true,
-              imageUrl: true,
+              images: true,
               sellingPrice: true
             }
           }
@@ -281,7 +310,7 @@ export const getOrderById = async idOrNumber => {
               id: true,
               name: true,
               sku: true,
-              imageUrl: true,
+              images: true,
               sellingPrice: true
             }
           }
@@ -314,7 +343,7 @@ export const getAllOrders = async (query = {}) => {
         orderItems: {
           include: {
             product: {
-              select: { id: true, name: true, sku: true, imageUrl: true }
+              select: { id: true, name: true, sku: true, images: true }
             }
           }
         }
@@ -354,7 +383,10 @@ export const updateOrderStatus = async (id, { status, paymentStatus }) => {
     data.paymentStatus = 'REFUNDED';
   }
 
-  if (data.status && ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(data.status)) {
+  if (
+    data.status &&
+    ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(data.status)
+  ) {
     const order = await prisma.order.findUnique({
       where: { id },
       select: { paymentStatus: true }

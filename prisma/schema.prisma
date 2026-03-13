@@ -20,8 +20,41 @@ model User {
   orders    Order[]
   reviews   Review[]
   cartItems CartItem[]
+  addresses Address[]
+  wishlist  WishlistItem[]
 
   @@map("users")
+}
+
+model Address {
+  id         String   @id @default(uuid())
+  userId     String
+  street     String
+  city       String
+  state      String?
+  postalCode String
+  country    String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders     Order[]  @relation("OrderShippingAddress")
+
+  @@map("addresses")
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlist_items")
 }
 
 model Product {
@@ -37,7 +70,9 @@ model Product {
   lowStockAlert   Int      @default(5)
   weight          Float?
   category        String?
-  imageUrl        String?
+  // imageUrl        String?
+  images          String[]  @default([])
+  specs           Json?
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -46,6 +81,7 @@ model Product {
   reviews         Review[]
   inventoryLogs   InventoryLog[]
   cartItems       CartItem[]
+  wishlistItems   WishlistItem[]
 
   @@map("products")
 }
@@ -82,6 +118,9 @@ model Order {
   id                String       @id @default(uuid())
   orderNumber       String       @unique
   userId            String
+  contactName       String?
+  contactEmail      String?
+  contactPhone      String?
   subtotal          Float
   taxAmount         Float        @default(0)
   shippingFee       Float        @default(0)
@@ -93,15 +132,15 @@ model Order {
   paymentMethod     String?
   transactionRef    String?
   shippingAddress   String
-  expiresAt         DateTime?
+  shippingAddressId String?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
   user              User         @relation(fields: [userId], references: [id])
+  shippingAddressRef Address?     @relation("OrderShippingAddress", fields: [shippingAddressId], references: [id])
   orderItems        OrderItem[]
 
   @@map("orders")
-  @@index([expiresAt, status, paymentStatus])
 }
 
 model OrderItem {

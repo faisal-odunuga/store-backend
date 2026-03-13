@@ -23,7 +23,9 @@ app.use(helmet());
 app.use(hpp());
 app.use(cookieParser());
 
-const allowedOrigins = Array.isArray(FRONTEND_URL) ? FRONTEND_URL : [FRONTEND_URL].filter(Boolean);
+const allowedOrigins = Array.isArray(FRONTEND_URL)
+  ? FRONTEND_URL
+  : [FRONTEND_URL].filter(Boolean);
 
 app.use(
   cors({
@@ -38,24 +40,25 @@ app.use(
   })
 );
 
-// ─── CLERK MIDDLEWARE ───────────────────────────
-// Attaches Clerk auth state to every request automatically.
-// Protected routes then call getAuth(req) to verify.
+app.use('/api/v1/webhooks/clerk', express.raw({ type: 'application/json' }));
+app.use('/api/v1/webhooks/paystack', express.raw({ type: 'application/json' }));
+
 app.use(clerkMiddleware());
-
-// ─── WEBHOOK (raw body required for svix verification) ─
-// Must come BEFORE express.json() global middleware
-app.use('/api/v1/auth/webhook', express.raw({ type: 'application/json' }));
-
-// ─── GLOBAL MIDDLEWARE ──────────────────────────
-app.use(express.json({ limit: '10kb' }));
+app.use(
+  express.json({
+    limit: '10kb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf.toString();
+    }
+  })
+);
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
 const limiter = rateLimit({
-  max: 100,
+  max: 1000,
   windowMs: 15 * 60 * 1000,
   message: 'Too many requests from this IP. Please try again in an hour'
 });

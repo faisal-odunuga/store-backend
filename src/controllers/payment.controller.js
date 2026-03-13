@@ -3,10 +3,14 @@ import messages from '../messages/index.js';
 import * as paymentService from '../services/payment.service.js';
 
 export const initializePayment = catchAsync(async (req, res, next) => {
-  const { orderId } = req.body;
+  const { orderId, callbackUrl } = req.body;
   const user = req.user;
 
-  const paymentData = await paymentService.initializePayment(orderId, user);
+  const paymentData = await paymentService.initializePayment(
+    orderId,
+    user,
+    callbackUrl
+  );
 
   res.status(200).json({
     status: messages.success,
@@ -16,7 +20,6 @@ export const initializePayment = catchAsync(async (req, res, next) => {
 
 export const verifyPayment = catchAsync(async (req, res, next) => {
   const { reference } = req.query;
-
   const order = await paymentService.verifyPayment(reference);
 
   res.status(200).json({

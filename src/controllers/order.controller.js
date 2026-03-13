@@ -4,16 +4,25 @@ import catchAsync from '../utils/catchAsync.js';
 import apiResponse from '../utils/apiResponse.js';
 
 export const createOrder = catchAsync(async (req, res) => {
-  const { items, shippingAddress, paymentMethod, discountAmount } = req.body;
-  const order = await orderService.createOrder(
-    req.user.id,
+  const {
     items,
     shippingAddress,
-    {
-      paymentMethod,
-      discountAmount
-    }
-  );
+    addressId,
+    paymentMethod,
+    discountAmount,
+    contactName,
+    contactEmail,
+    contactPhone
+  } = req.body;
+
+  const order = await orderService.createOrder(req.user.id, items, shippingAddress, {
+    paymentMethod,
+    discountAmount,
+    contactName,
+    contactEmail,
+    contactPhone,
+    addressId
+  });
   const payment = await paymentService.initializePayment(order.id, req.user);
   apiResponse(res, 201, 'Order created successfully', { order, payment });
 });

@@ -66,7 +66,7 @@ export const getDashboardStats = async () => {
           name: true,
           sku: true,
           category: true,
-          imageUrl: true
+          images: true
         }
       });
       return {

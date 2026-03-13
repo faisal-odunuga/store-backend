@@ -59,6 +59,114 @@ export const updateUserProfile = async (userId, updateData) => {
   return user;
 };
 
+// ─── ADDRESS MANAGEMENT ──────────────────────────
+
+export const getAddresses = async userId => {
+  return await prisma.address.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' }
+  });
+};
+
+export const addAddress = async (userId, data) => {
+  const { isDefault, ...addressData } = data;
+
+  // If this is set as default, unset other defaults for this user
+  if (isDefault) {
+    await prisma.address.updateMany({
+      where: { userId, isDefault: true },
+      data: { isDefault: false }
+    });
+  }
+
+  return await prisma.address.create({
+    data: {
+      ...addressData,
+      isDefault: !!isDefault,
+      userId
+    }
+  });
+};
+
+export const updateAddress = async (id, userId, data) => {
+  const { isDefault, ...addressData } = data;
+
+  // Ensure address belongs to user
+  const address = await prisma.address.findFirst({
+    where: { id, userId }
+  });
+  if (!address) throw new AppError('Address not found', 404);
+
+  if (isDefault) {
+    await prisma.address.updateMany({
+      where: { userId, isDefault: true },
+      data: { isDefault: false }
+    });
+  }
+
+  return await prisma.address.update({
+    where: { id },
+    data: {
+      ...addressData,
+      isDefault: isDefault !== undefined ? !!isDefault : address.isDefault
+    }
+  });
+};
+
+export const deleteAddress = async (id, userId) => {
+  const address = await prisma.address.findFirst({
+    where: { id, userId }
+  });
+  if (!address) throw new AppError('Address not found', 404);
+
+  await prisma.address.delete({ where: { id } });
+};
+
+// ─── WISHLIST MANAGEMENT ─────────────────────────
+
+export const getWishlist = async userId => {
+  return await prisma.wishlistItem.findMany({
+    where: { userId },
+    include: {
+      product: true
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+};
+
+export const addToWishlist = async (userId, productId) => {
+  // Check if product exists
+  const product = await prisma.product.findUnique({
+    where: { id: productId }
+  });
+  if (!product) throw new AppError('Product not found', 404);
+
+  // Use upsert or find then create to avoid duplicates
+  return await prisma.wishlistItem.upsert({
+    where: {
+      userId_productId: { userId, productId }
+    },
+    update: {}, // No change if already exists
+    create: {
+      userId,
+      productId
+    }
+  });
+};
+
+export const removeFromWishlist = async (userId, productId) => {
+  try {
+    await prisma.wishlistItem.delete({
+      where: {
+        userId_productId: { userId, productId }
+      }
+    });
+  } catch (error) {
+    // If it doesn't exist, we don't necessarily need to throw, but following strict patterns:
+    throw new AppError('Item not found in wishlist', 404);
+  }
+};
+
 export const updateUserRole = async (userId, role) => {
   return await prisma.user.update({
     where: { id: userId },

@@ -1,5 +1,4 @@
 import * as userService from '../services/user.service.js';
-import * as adminService from '../services/admin.service.js';
 import catchAsync from '../utils/catchAsync.js';
 import apiResponse from '../utils/apiResponse.js';
 
@@ -13,33 +12,45 @@ export const updateMe = catchAsync(async (req, res) => {
   apiResponse(res, 200, 'Profile updated successfully', { user });
 });
 
-export const getAllUsers = catchAsync(async (req, res) => {
-  const result = await userService.getAllUsers(req.query);
-  apiResponse(res, 200, 'All users retrieved', result);
+// Address Management
+export const getAddresses = catchAsync(async (req, res) => {
+  const addresses = await userService.getAddresses(req.user.id);
+  apiResponse(res, 200, 'Addresses retrieved', { addresses });
 });
 
-export const getUser = catchAsync(async (req, res) => {
-  const user = await userService.getUserProfile(req.params.id);
-  apiResponse(res, 200, 'User retrieved successfully', { user });
+export const addAddress = catchAsync(async (req, res) => {
+  const address = await userService.addAddress(req.user.id, req.body);
+  apiResponse(res, 201, 'Address added successfully', { address });
 });
 
-export const updateUser = catchAsync(async (req, res) => {
-  const user = await userService.updateUserProfile(req.params.id, req.body);
-  apiResponse(res, 200, 'User updated successfully', { user });
+export const updateAddress = catchAsync(async (req, res) => {
+  const address = await userService.updateAddress(
+    req.params.id,
+    req.user.id,
+    req.body
+  );
+  apiResponse(res, 200, 'Address updated successfully', { address });
 });
 
-export const updateUserRole = catchAsync(async (req, res) => {
-  const { role } = req.body;
-  const user = await userService.updateUserRole(req.params.id, role);
-  apiResponse(res, 200, 'User role updated successfully', { user });
+export const deleteAddress = catchAsync(async (req, res) => {
+  await userService.deleteAddress(req.params.id, req.user.id);
+  apiResponse(res, 200, 'Address deleted successfully');
 });
 
-export const deleteUser = catchAsync(async (req, res) => {
-  await userService.deleteUser(req.params.id);
-  apiResponse(res, 204, 'User deleted successfully');
+// Wishlist Management
+export const getWishlist = catchAsync(async (req, res) => {
+  const wishlist = await userService.getWishlist(req.user.id);
+  apiResponse(res, 200, 'Wishlist retrieved', { wishlist });
 });
 
-export const createManager = catchAsync(async (req, res) => {
-  const user = await adminService.createManagerUser(req.body);
-  apiResponse(res, 201, 'Manager account created successfully', { user });
+export const addToWishlist = catchAsync(async (req, res) => {
+  const { productId } = req.body;
+  const item = await userService.addToWishlist(req.user.id, productId);
+  apiResponse(res, 201, 'Added to wishlist', { item });
+});
+
+export const removeFromWishlist = catchAsync(async (req, res) => {
+  const { productId } = req.params;
+  await userService.removeFromWishlist(req.user.id, productId);
+  apiResponse(res, 200, 'Removed from wishlist');
 });

@@ -1,4 +1,4 @@
-import { createClerkClient, getAuth } from '@clerk/express';
+import { createClerkClient, getAuth, requireAuth } from '@clerk/express';
 import prisma from '../config/prismaClient.js';
 import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
@@ -9,18 +9,7 @@ const clerkClient = process.env.CLERK_SECRET_KEY
   : null;
 
 export const protect = catchAsync(async (req, res, next) => {
-  const auth = getAuth(req);
-  const { userId: clerkId } = auth;
-
-  // console.log('--- Auth Debug ---');
-  // console.log('URL:', req.originalUrl);
-  // console.log(
-  //   'Authorization Header:',
-  //   req.headers.authorization ? 'Present' : 'Missing'
-  // );
-  // console.log('ClerkId Header:', req.headers.clerkid);
-  // console.log('getAuth userId:', clerkId);
-  // console.log('------------------');
+  const clerkId = req.auth().userId;
 
   if (!clerkId) {
     return next(
@@ -54,6 +43,8 @@ export const protect = catchAsync(async (req, res, next) => {
   req.user = currentUser;
   next();
 });
+
+export const protectRoute = [requireAuth(), protect];
 
 export const restrictTo = (...roles) => {
   return (req, res, next) => {

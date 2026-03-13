@@ -15,3 +15,7 @@ export const createReviewSchema = z
       .optional()
   })
   .strict();
+
+export const updateReviewSchema = createReviewSchema
+  .omit({ productId: true })
+  .partial();
